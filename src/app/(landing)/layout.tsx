@@ -5,17 +5,22 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 import {
   Bars3Icon,
   XMarkIcon,
   ArrowRightIcon,
+  SunIcon,
+  MoonIcon,
 } from '@heroicons/react/24/outline'
+import { useTheme } from 'next-themes'
 
-const navigation = [
+const navItems = [
   { name: 'Home', href: '/' },
   { name: 'About', href: '/about' },
+  { name: 'Features', href: '/features' },
+  { name: 'How It Works', href: '/how-it-works' },
   { name: 'Testimonials', href: '/testimonials' },
+  { name: 'FAQ', href: '/faq' },
   { name: 'Contact', href: '/contact' },
 ]
 
@@ -25,10 +30,13 @@ export default function LandingLayout({
   children: React.ReactNode
 }) {
   const [isScrolled, setIsScrolled] = useState(false)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
+  const { theme, setTheme, resolvedTheme } = useTheme()
 
   useEffect(() => {
+    setMounted(true)
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20)
     }
@@ -36,104 +44,117 @@ export default function LandingLayout({
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  if (!mounted) {
+    return null
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation */}
+      {/* Header */}
       <motion.header
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        className={cn(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-          isScrolled
-            ? "bg-background/80 backdrop-blur-lg shadow-lg"
-            : "bg-transparent"
-        )}
+        className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 shadow-lg border-b border-gray-200 dark:border-gray-800 transition-all duration-300"
       >
-        <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            {/* Logo */}
-            <Link href="/" className="flex items-center space-x-2">
-              <span className="text-2xl font-bold bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] bg-clip-text text-transparent">
-                InvestWise
-              </span>
-            </Link>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex md:items-center md:space-x-8">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    "text-sm font-medium transition-colors hover:text-[#ff5858]",
-                    pathname === item.href
-                      ? "text-[#ff5858]"
-                      : "text-gray-600 dark:text-gray-300"
-                  )}
-                >
-                  {item.name}
-                </Link>
-              ))}
-              <Button
-                asChild
-                className="bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] text-white hover:opacity-90"
+        <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
+          {/* Logo */}
+          <Link href="/" className="flex items-center space-x-2">
+            <span className="text-2xl font-bold bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] bg-clip-text text-transparent">Paschal</span>
+          </Link>
+          {/* Desktop Nav */}
+          <div className="hidden md:flex items-center gap-6">
+            {navItems.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className="relative text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-[#ff5858] transition-colors px-2 py-1"
               >
-                <Link href="/dashboard">
-                  Get Started
-                  <ArrowRightIcon className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-
-            {/* Mobile menu button */}
-            <div className="flex md:hidden">
-              <button
-                type="button"
-                className="inline-flex items-center justify-center rounded-md p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              >
-                <span className="sr-only">Open main menu</span>
-                {isMobileMenuOpen ? (
-                  <XMarkIcon className="h-6 w-6" />
-                ) : (
-                  <Bars3Icon className="h-6 w-6" />
+                <span className={pathname === item.href ? 'text-[#ff5858]' : ''}>{item.name}</span>
+                {pathname === item.href && (
+                  <motion.div
+                    layoutId="nav-underline"
+                    className="absolute left-0 right-0 -bottom-1 h-0.5 bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] rounded-full"
+                  />
                 )}
-              </button>
-            </div>
+              </Link>
+            ))}
+            {/* Theme Switcher */}
+            <button
+              aria-label={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+              className="ml-2 rounded-full p-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              {resolvedTheme === 'dark' ? (
+                <SunIcon className="h-5 w-5 text-yellow-400" />
+              ) : (
+                <MoonIcon className="h-5 w-5 text-gray-700" />
+              )}
+            </button>
+            {/* Sign In & Sign Up Buttons */}
+            <Button asChild variant="outline" className="ml-4 border-2 text-[#ff5858] border-[#ff5858] bg-transparent hover:bg-[#ff5858]/10 hover:text-[#ff7e5f] dark:text-[#ff9966] dark:border-[#ff9966] dark:hover:bg-[#ff9966]/10">
+              <Link href="/auth/login">Sign In</Link>
+            </Button>
+            <Button asChild className="ml-2 bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] text-white hover:opacity-90">
+              <Link href="/auth/register">
+                Sign Up
+                <ArrowRightIcon className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+          {/* Mobile Menu Button */}
+          <div className="md:hidden flex items-center">
+            {/* Theme Switcher for Mobile */}
+            <button
+              aria-label={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+              className="mr-2 rounded-full p-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              {resolvedTheme === 'dark' ? (
+                <SunIcon className="h-5 w-5 text-yellow-400" />
+              ) : (
+                <MoonIcon className="h-5 w-5 text-gray-700" />
+              )}
+            </button>
+            <button
+              type="button"
+              className="inline-flex items-center justify-center rounded-md p-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={() => setMobileOpen((open) => !open)}
+            >
+              <span className="sr-only">Open main menu</span>
+              {mobileOpen ? <XMarkIcon className="h-6 w-6" /> : <Bars3Icon className="h-6 w-6" />}
+            </button>
           </div>
         </nav>
-
-        {/* Mobile menu */}
+        {/* Mobile Nav */}
         <AnimatePresence>
-          {isMobileMenuOpen && (
+          {mobileOpen && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden"
+              className="md:hidden bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-lg"
             >
-              <div className="space-y-1 px-4 pb-3 pt-2">
-                {navigation.map((item) => (
+              <div className="flex flex-col gap-2 px-4 py-4">
+                {navItems.map((item) => (
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={cn(
-                      "block rounded-md px-3 py-2 text-base font-medium",
+                    className={
                       pathname === item.href
-                        ? "bg-gray-100 dark:bg-gray-800 text-[#ff5858]"
-                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-                    )}
-                    onClick={() => setIsMobileMenuOpen(false)}
+                        ? 'text-[#ff5858] font-semibold py-2'
+                        : 'text-gray-700 dark:text-gray-200 py-2 hover:text-[#ff5858] transition-colors'
+                    }
+                    onClick={() => setMobileOpen(false)}
                   >
                     {item.name}
                   </Link>
                 ))}
-                <Button
-                  asChild
-                  className="w-full mt-4 bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] text-white hover:opacity-90"
-                >
-                  <Link href="/dashboard">
-                    Get Started
+                <Button asChild variant="outline" className="mt-2 border-2 text-[#ff5858] border-[#ff5858] bg-transparent hover:bg-[#ff5858]/10 hover:text-[#ff7e5f] dark:text-[#ff9966] dark:border-[#ff9966] dark:hover:bg-[#ff9966]/10">
+                  <Link href="/auth/login">Sign In</Link>
+                </Button>
+                <Button asChild className="mt-2 bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] text-white hover:opacity-90">
+                  <Link href="/auth/register">
+                    Sign Up
                     <ArrowRightIcon className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
@@ -144,17 +165,17 @@ export default function LandingLayout({
       </motion.header>
 
       {/* Main Content */}
-      <main className="pt-16">
+      <main className="pt-20">
         {children}
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-50 dark:bg-gray-900">
+      <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
             <div className="space-y-4">
               <h3 className="text-lg font-bold bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] bg-clip-text text-transparent">
-                InvestWise
+                Paschal
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Your trusted partner in smart investments and financial growth.
@@ -164,17 +185,17 @@ export default function LandingLayout({
               <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Company</h4>
               <ul className="mt-4 space-y-2">
                 <li>
-                  <Link href="/about" className="text-sm text-gray-600 dark:text-gray-400 hover:text-[#ff5858]">
+                  <Link href="/about" className="text-sm text-gray-600 dark:text-gray-400 hover:text-[#ff5858] transition-colors">
                     About Us
                   </Link>
                 </li>
                 <li>
-                  <Link href="/testimonials" className="text-sm text-gray-600 dark:text-gray-400 hover:text-[#ff5858]">
+                  <Link href="/testimonials" className="text-sm text-gray-600 dark:text-gray-400 hover:text-[#ff5858] transition-colors">
                     Testimonials
                   </Link>
                 </li>
                 <li>
-                  <Link href="/contact" className="text-sm text-gray-600 dark:text-gray-400 hover:text-[#ff5858]">
+                  <Link href="/contact" className="text-sm text-gray-600 dark:text-gray-400 hover:text-[#ff5858] transition-colors">
                     Contact
                   </Link>
                 </li>
@@ -184,17 +205,17 @@ export default function LandingLayout({
               <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Resources</h4>
               <ul className="mt-4 space-y-2">
                 <li>
-                  <Link href="/blog" className="text-sm text-gray-600 dark:text-gray-400 hover:text-[#ff5858]">
+                  <Link href="/blog" className="text-sm text-gray-600 dark:text-gray-400 hover:text-[#ff5858] transition-colors">
                     Blog
                   </Link>
                 </li>
                 <li>
-                  <Link href="/faq" className="text-sm text-gray-600 dark:text-gray-400 hover:text-[#ff5858]">
+                  <Link href="/faq" className="text-sm text-gray-600 dark:text-gray-400 hover:text-[#ff5858] transition-colors">
                     FAQ
                   </Link>
                 </li>
                 <li>
-                  <Link href="/support" className="text-sm text-gray-600 dark:text-gray-400 hover:text-[#ff5858]">
+                  <Link href="/support" className="text-sm text-gray-600 dark:text-gray-400 hover:text-[#ff5858] transition-colors">
                     Support
                   </Link>
                 </li>
@@ -204,12 +225,12 @@ export default function LandingLayout({
               <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Legal</h4>
               <ul className="mt-4 space-y-2">
                 <li>
-                  <Link href="/privacy" className="text-sm text-gray-600 dark:text-gray-400 hover:text-[#ff5858]">
+                  <Link href="/privacy" className="text-sm text-gray-600 dark:text-gray-400 hover:text-[#ff5858] transition-colors">
                     Privacy Policy
                   </Link>
                 </li>
                 <li>
-                  <Link href="/terms" className="text-sm text-gray-600 dark:text-gray-400 hover:text-[#ff5858]">
+                  <Link href="/terms" className="text-sm text-gray-600 dark:text-gray-400 hover:text-[#ff5858] transition-colors">
                     Terms of Service
                   </Link>
                 </li>
@@ -218,7 +239,7 @@ export default function LandingLayout({
           </div>
           <div className="mt-8 border-t border-gray-200 dark:border-gray-800 pt-8">
             <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-              © {new Date().getFullYear()} InvestWise. All rights reserved.
+              © {new Date().getFullYear()} Paschal. All rights reserved.
             </p>
           </div>
         </div>
