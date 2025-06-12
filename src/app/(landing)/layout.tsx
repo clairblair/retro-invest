@@ -29,19 +29,13 @@ export default function LandingLayout({
 }: {
   children: React.ReactNode
 }) {
-  const [isScrolled, setIsScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
-  const { theme, setTheme, resolvedTheme } = useTheme()
+  const { setTheme, resolvedTheme } = useTheme()
 
   useEffect(() => {
     setMounted(true)
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20)
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   if (!mounted) {
@@ -59,7 +53,7 @@ export default function LandingLayout({
         <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <span className="text-2xl font-bold bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] bg-clip-text text-transparent">Paschal</span>
+            <span className="text-2xl font-bold bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] bg-clip-text text-transparent">KLTMINES</span>
           </Link>
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-6">
@@ -175,7 +169,7 @@ export default function LandingLayout({
           <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
             <div className="space-y-4">
               <h3 className="text-lg font-bold bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] bg-clip-text text-transparent">
-                Paschal
+                KLTMINES
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Your trusted partner in smart investments and financial growth.
@@ -239,7 +233,7 @@ export default function LandingLayout({
           </div>
           <div className="mt-8 border-t border-gray-200 dark:border-gray-800 pt-8">
             <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-              © {new Date().getFullYear()} Paschal. All rights reserved.
+              © {new Date().getFullYear()} KLTMINES. All rights reserved.
             </p>
           </div>
         </div>

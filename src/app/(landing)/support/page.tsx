@@ -18,8 +18,8 @@ const contactMethods = [
     name: 'Email Support',
     description: 'Get in touch with our support team via email',
     icon: EnvelopeIcon,
-    contact: 'support@paschal.com',
-    link: 'mailto:support@paschal.com',
+    contact: 'support@kltmines.com',
+    link: 'mailto:support@kltmines.com',
   },
   {
     name: 'Phone Support',

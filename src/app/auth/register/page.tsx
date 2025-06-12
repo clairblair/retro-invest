@@ -3,13 +3,36 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Icons } from '@/components/icons'
+import Image from 'next/image'
+
+// Move testimonial data outside component
+const reviews = [
+  {
+    quote: 'KLTMINES made investing so easy. My portfolio grew faster than I expected, and the support team was always there for me. Highly recommend!',
+    highlight: 'I barely had to do anything',
+    name: 'Jane Doe',
+    avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
+    stars: 5,
+  },
+  {
+    quote: 'The auto-invest feature is a game changer. I just set my preferences and watch my money grow. The dashboard is beautiful and easy to use.',
+    highlight: 'Effortless and rewarding',
+    name: 'Michael Smith',
+    avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+    stars: 5,
+  },
+  {
+    quote: 'I love the transparency and instant withdrawals. KLTMINES is the best investment platform I have ever used.',
+    highlight: 'Best platform for investors',
+    name: 'Aisha Bello',
+    avatar: 'https://randomuser.me/api/portraits/women/68.jpg',
+    stars: 5,
+  },
+];
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -22,6 +45,14 @@ export default function RegisterPage() {
     confirmPassword: '',
     agreeToTerms: false,
   })
+  const [currentReview, setCurrentReview] = useState(0)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentReview((prev) => (prev + 1) % reviews.length)
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -62,7 +93,7 @@ export default function RegisterPage() {
               Your Journey to Financial Freedom <span className='text-white'>Starts Here.</span>
             </div>
             <div className="text-lg text-white mb-6 font-medium opacity-90">
-              Join Paschal and unlock smarter, safer, and more rewarding investments.
+              Join KLTMINES and unlock smarter, safer, and more rewarding investments.
             </div>
             <ul className="mb-8 space-y-2">
               <li className="flex items-center text-white text-base opacity-80"><span className="mr-2 text-white">•</span> Trusted by thousands</li>
@@ -71,46 +102,22 @@ export default function RegisterPage() {
             </ul>
             {/* Testimonial Carousel */}
             {(() => {
-              const reviews = [
-                {
-                  quote: 'Paschal made investing so easy. My portfolio grew faster than I expected, and the support team was always there for me. Highly recommend!',
-                  highlight: 'I barely had to do anything',
-                  name: 'Jane Doe',
-                  avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-                  stars: 5,
-                },
-                {
-                  quote: 'The auto-invest feature is a game changer. I just set my preferences and watch my money grow. The dashboard is beautiful and easy to use.',
-                  highlight: 'Effortless and rewarding',
-                  name: 'Michael Smith',
-                  avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-                  stars: 5,
-                },
-                {
-                  quote: 'I love the transparency and instant withdrawals. Paschal is the best investment platform I have ever used.',
-                  highlight: 'Best platform for investors',
-                  name: 'Aisha Bello',
-                  avatar: 'https://randomuser.me/api/portraits/women/68.jpg',
-                  stars: 5,
-                },
-              ];
-              const [current, setCurrent] = useState(0);
-              useEffect(() => {
-                const interval = setInterval(() => {
-                  setCurrent((prev) => (prev + 1) % reviews.length);
-                }, 4000);
-                return () => clearInterval(interval);
-              }, [reviews.length]);
               return (
                 <div className="relative mb-6">
                   <div className="bg-gradient-to-br from-white/20 via-white/10 to-white/5 rounded-2xl p-6 shadow-lg backdrop-blur-md min-h-[180px]">
-                    <div className="text-lg font-semibold text-white mb-2">"{reviews[current].highlight}"</div>
-                    <div className="text-white/90 mb-4 text-sm">{reviews[current].quote}</div>
+                    <div className="text-lg font-semibold text-white mb-2">&ldquo;{reviews[currentReview].highlight}&rdquo;</div>
+                    <div className="text-white/90 mb-4 text-sm">{reviews[currentReview].quote}</div>
                     <div className="flex items-center gap-3 mt-2">
-                      <img src={reviews[current].avatar} alt={reviews[current].name} className="h-8 w-8 rounded-full border-2 border-white/30" />
-                      <span className="text-white font-medium text-sm">{reviews[current].name}</span>
+                      <Image
+                        src={reviews[currentReview].avatar}
+                        alt={reviews[currentReview].name}
+                        width={32}
+                        height={32}
+                        className="h-8 w-8 rounded-full border-2 border-white/30"
+                      />
+                      <span className="text-white font-medium text-sm">{reviews[currentReview].name}</span>
                       <span className="flex ml-auto gap-0.5">
-                        {[...Array(reviews[current].stars)].map((_, i) => (
+                        {[...Array(reviews[currentReview].stars)].map((_, i) => (
                           <svg key={i} className="h-4 w-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><polygon points="10 1.5 12.59 7.36 18.9 7.64 13.97 11.97 15.54 18.09 10 14.77 4.46 18.09 6.03 11.97 1.1 7.64 7.41 7.36 10 1.5" /></svg>
                         ))}
                       </span>
@@ -121,8 +128,8 @@ export default function RegisterPage() {
                     {reviews.map((_, idx) => (
                       <button
                         key={idx}
-                        onClick={() => setCurrent(idx)}
-                        className={`w-3 h-3 rounded-full transition-all duration-200 ${current === idx ? 'bg-white' : 'bg-white/40'}`}
+                        onClick={() => setCurrentReview(idx)}
+                        className={`w-3 h-3 rounded-full transition-all duration-200 ${currentReview === idx ? 'bg-white' : 'bg-white/40'}`}
                         aria-label={`Go to review ${idx + 1}`}
                       />
                     ))}
@@ -130,7 +137,7 @@ export default function RegisterPage() {
                 </div>
               );
             })()}
-            <div className="text-sm text-white mt-8 opacity-70">Questions? <a href="mailto:info@paschal.com" className="underline hover:text-orange-200 transition-colors">info@paschal.com</a></div>
+            <div className="text-sm text-white mt-8 opacity-70">Questions? <a href="mailto:info@kltmines.com" className="underline hover:text-orange-200 transition-colors">info@kltmines.com</a></div>
           </div>
         </div>
         {/* Right Card */}

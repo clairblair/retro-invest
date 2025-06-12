@@ -6,14 +6,8 @@ import {
   BellIcon,
   ShieldCheckIcon,
   CreditCardIcon,
-  GlobeAltIcon,
-  KeyIcon,
-  DevicePhoneMobileIcon,
-  EnvelopeIcon,
   WalletIcon,
-  XMarkIcon,
   PlusIcon,
-  ChevronRightIcon,
 } from '@heroicons/react/24/outline'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -21,11 +15,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import {
   Dialog,
@@ -36,7 +29,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 
 interface NotificationSetting {
   id: string

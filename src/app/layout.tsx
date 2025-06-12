@@ -25,7 +25,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} antialiased`}>
       <body className="min-h-screen bg-gray-50 font-sans">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-          {children}
+        {children}
           <Toaster />
         </ThemeProvider>
       </body>

@@ -15,7 +15,6 @@ import {
   UserGroupIcon,
   SparklesIcon,
   BuildingOfficeIcon,
-  CheckCircleIcon,
 } from '@heroicons/react/24/outline'
 
 const features = [
@@ -79,19 +78,19 @@ const testimonials = [
     name: 'David Thompson',
     role: 'Tech Entrepreneur',
     image: '/testimonials/david.jpg',
-    quote: "Paschal has transformed my investment strategy. The platform's ease of use and consistent returns have made it an essential part of my financial portfolio.",
+    quote: "KLTMINES has transformed my investment strategy. The platform&apos;s ease of use and consistent returns have made it an essential part of my financial portfolio.",
   },
   {
     name: 'Maria Rodriguez',
     role: 'Small Business Owner',
     image: '/testimonials/maria.jpg',
-    quote: "As a small business owner, I needed a reliable investment platform. Paschal has exceeded my expectations with their transparent processes and excellent returns.",
+    quote: "As a small business owner, I needed a reliable investment platform. KLTMINES has exceeded my expectations with their transparent processes and excellent returns.",
   },
   {
     name: 'James Wilson',
     role: 'Retired Professional',
     image: '/testimonials/james.jpg',
-    quote: "The daily ROI and professional support from Paschal have made my retirement planning much more effective. I highly recommend their services.",
+    quote: "The daily ROI and professional support from KLTMINES have made my retirement planning much more effective. I highly recommend their services.",
   },
 ]
 
@@ -134,7 +133,7 @@ export default function LandingPage() {
               </span>
             </h1>
             <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-xl mx-auto lg:mx-0">
-              Paschal empowers you to grow your wealth with advanced investment plans, daily ROI, and a secure, beautiful dashboard. Join thousands of investors building their future today.
+              KLTMINES empowers you to grow your wealth with advanced investment plans, daily ROI, and a secure, beautiful dashboard. Join thousands of investors building their future today.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <Button
@@ -168,7 +167,7 @@ export default function LandingPage() {
           >
             <Image
               src="/images/hero.png"
-              alt="Paschal Investment Platform Hero"
+              alt="KLTMINES Investment Platform Hero"
               width={500}
               height={400}
               className="rounded-3xl shadow-2xl object-cover border-4 border-white dark:border-gray-900"
@@ -192,7 +191,7 @@ export default function LandingPage() {
               Our Story
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300">
-              Founded in 2020, Paschal was created to democratize smart investing for everyone. Our mission is to empower individuals and businesses to achieve financial freedom through innovative, secure, and accessible investment solutions.
+              Founded in 2023, KLTMINES was created to democratize smart investing for everyone. Our mission is to empower individuals and businesses to achieve financial freedom through innovative, secure, and accessible investment solutions.
             </p>
             <div className="grid grid-cols-2 gap-6">
               <div>
@@ -222,7 +221,7 @@ export default function LandingPage() {
           >
             <Image
               src="/images/about.jpg"
-              alt="About Paschal"
+              alt="About KLTMINES"
               width={400}
               height={350}
               className="rounded-2xl shadow-xl object-cover border-4 border-white dark:border-gray-900"
@@ -236,7 +235,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Why Choose <span className="bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] bg-clip-text text-transparent">Paschal?</span>
+              Why Choose <span className="bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] bg-clip-text text-transparent">KLTMINES?</span>
             </h2>
             <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
               Experience the best investment platform with our unique features
@@ -346,7 +345,7 @@ export default function LandingPage() {
                     </h3>
                     <p className="text-sm text-[#ff5858] mb-2">{testimonial.role}</p>
                     <p className="text-gray-600 dark:text-gray-400">
-                      "{testimonial.quote}"
+                      {testimonial.quote}
                     </p>
                   </CardContent>
                 </Card>
@@ -361,10 +360,10 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              See Paschal in Action
+              See KLTMINES in Action
             </h2>
             <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
-              Explore our platform's beautiful, intuitive interface
+              Explore our platforms beautiful, intuitive interface
             </p>
           </div>
           <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -422,7 +421,7 @@ export default function LandingPage() {
               Frequently Asked Questions
             </h2>
             <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
-              Everything you need to know about Paschal
+              Everything you need to know about KLTMINES
             </p>
           </div>
           <Accordion type="single" collapsible className="w-full">

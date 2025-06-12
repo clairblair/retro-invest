@@ -13,6 +13,7 @@ import {
   ChevronRightIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
+  ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -80,6 +81,25 @@ const roiTransactions: RoiTransaction[] = [
     status: 'pending',
     type: 'weekly',
   },
+]
+
+// Fix unescaped entities
+const stats = [
+  {
+    name: 'Total ROI',
+    value: '$12,500.00',
+    change: '+15.5%',
+    changeType: 'increase',
+    description: 'Your total return on investment',
+  },
+  {
+    name: 'Daily ROI',
+    value: '$245.00',
+    change: '+2.5%',
+    changeType: 'increase',
+    description: 'Today&apos;s return on investment',
+  },
+  // ... rest of the stats ...
 ]
 
 export default function RoiPage() {

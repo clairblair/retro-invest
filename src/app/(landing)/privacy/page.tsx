@@ -28,7 +28,7 @@ export default function PrivacyPage() {
             </section>
             <section>
               <h2 className="text-2xl font-semibold mb-2">5. Contact</h2>
-              <p>If you have any questions about this Privacy Policy, please contact us at <a href="mailto:support@paschal.com" className="text-[#ff5858] underline">support@paschal.com</a>.</p>
+              <p>If you have any questions about this Privacy Policy, please contact us at <a href="mailto:support@kltmines.com" className="text-[#ff5858] underline">support@kltmines.com</a>.</p>
             </section>
           </CardContent>
         </Card>

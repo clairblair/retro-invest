@@ -12,7 +12,7 @@ export default function TermsPage() {
           <CardContent className="p-8 space-y-8 text-gray-700 dark:text-gray-300">
             <section>
               <h2 className="text-2xl font-semibold mb-2">1. User Agreement</h2>
-              <p>By accessing or using the Paschal platform, you agree to comply with and be bound by these Terms and Conditions. If you do not agree, please do not use our services.</p>
+              <p>By accessing or using the KLTMINES platform, you agree to comply with and be bound by these Terms and Conditions. If you do not agree, please do not use our services.</p>
             </section>
             <section>
               <h2 className="text-2xl font-semibold mb-2">2. Acceptable Use</h2>
@@ -20,7 +20,7 @@ export default function TermsPage() {
             </section>
             <section>
               <h2 className="text-2xl font-semibold mb-2">3. Limitation of Liability</h2>
-              <p>Paschal is not liable for any indirect, incidental, or consequential damages arising from your use of the platform. Investment involves risk, and past performance does not guarantee future results.</p>
+              <p>KLTMINES is not liable for any indirect, incidental, or consequential damages arising from your use of the platform. Investment involves risk, and past performance does not guarantee future results.</p>
             </section>
             <section>
               <h2 className="text-2xl font-semibold mb-2">4. Changes to Terms</h2>
@@ -28,7 +28,7 @@ export default function TermsPage() {
             </section>
             <section>
               <h2 className="text-2xl font-semibold mb-2">5. Contact</h2>
-              <p>If you have any questions about these Terms, please contact us at <a href="mailto:support@paschal.com" className="text-[#ff5858] underline">support@paschal.com</a>.</p>
+              <p>If you have any questions about these Terms, please contact us at <a href="mailto:support@kltmines.com" className="text-[#ff5858] underline">support@kltmines.com</a>.</p>
             </section>
           </CardContent>
         </Card>

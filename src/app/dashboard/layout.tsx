@@ -60,7 +60,7 @@ interface UserProfile {
 }
 
 // Sample notifications
-const notifications: Notification[] = [
+const initialNotifications: Notification[] = [
   {
     id: 1,
     type: 'success',
@@ -110,22 +110,21 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
-  const [notificationsList, setNotificationsList] = useState<Notification[]>(notifications)
-  const [showNotifications, setShowNotifications] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications)
   const pathname = usePathname()
-  const { theme, setTheme, resolvedTheme } = useTheme()
+  const { setTheme, resolvedTheme } = useTheme()
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 0)
+      setIsScrolled(window.scrollY > 20)
     }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const unreadCount = notificationsList.filter(n => !n.read).length
+  const unreadCount = notifications.filter((n: Notification) => !n.read).length
 
   const getNotificationIcon = (type: NotificationType) => {
     switch (type) {
@@ -139,16 +138,16 @@ export default function DashboardLayout({
   }
 
   const markAsRead = (id: number) => {
-    setNotificationsList(prev =>
-      prev.map(notification =>
+    setNotifications(prevNotifications => 
+      prevNotifications.map((notification: Notification) =>
         notification.id === id ? { ...notification, read: true } : notification
       )
     )
   }
 
   const markAllAsRead = () => {
-    setNotificationsList(prev =>
-      prev.map(notification => ({ ...notification, read: true }))
+    setNotifications(prevNotifications => 
+      prevNotifications.map((notification: Notification) => ({ ...notification, read: true }))
     )
   }
 
@@ -156,14 +155,14 @@ export default function DashboardLayout({
     <div className="min-h-screen bg-background dark:bg-[#18181b]">
       {/* Mobile Sidebar */}
       <AnimatePresence>
-        {sidebarOpen && (
+        {mobileOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 lg:hidden"
           >
-            <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+            <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
             <motion.div
               initial={{ x: -300 }}
               animate={{ x: 0 }}
@@ -174,9 +173,7 @@ export default function DashboardLayout({
               <div className="flex h-16 items-center justify-between px-4 border-b border-gray-800">
                 <div className="flex items-center space-x-3">
                   <div className="h-8 w-8 rounded-lg bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966]" />
-                  <span className="text-xl font-bold bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] bg-clip-text text-transparent">
-                    Paschal
-                  </span>
+                  <span className="text-2xl font-bold bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] bg-clip-text text-transparent">KLTMINES</span>
                 </div>
                 <button
                   aria-label={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -192,7 +189,7 @@ export default function DashboardLayout({
                 <button
                   type="button"
                   className="rounded-md p-2 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
-                  onClick={() => setSidebarOpen(false)}
+                  onClick={() => setMobileOpen(false)}
                 >
                   <XMarkIcon className="h-6 w-6" />
                 </button>
@@ -239,9 +236,7 @@ export default function DashboardLayout({
           <div className="flex h-16 items-center px-4 border-b border-gray-800">
             <div className="flex items-center space-x-3">
               <div className="h-8 w-8 rounded-lg bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966]" />
-              <span className="text-xl font-bold bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] bg-clip-text text-transparent">
-                Paschal
-              </span>
+              <span className="text-2xl font-bold bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] bg-clip-text text-transparent">KLTMINES</span>
             </div>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
@@ -293,7 +288,7 @@ export default function DashboardLayout({
           <button
             type="button"
             className="px-4 text-gray-500 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 lg:hidden"
-            onClick={() => setSidebarOpen(true)}
+            onClick={() => setMobileOpen(true)}
           >
             <Bars3Icon className="h-6 w-6" />
           </button>
@@ -335,7 +330,7 @@ export default function DashboardLayout({
                   />
                 </button>
               </div>
-              <DropdownMenu open={showNotifications} onOpenChange={setShowNotifications}>
+              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
@@ -377,7 +372,7 @@ export default function DashboardLayout({
                   </div>
                   <ScrollArea className="h-[min(400px,calc(100vh-12rem))]">
                     <div className="p-2">
-                      {notificationsList.length === 0 ? (
+                      {notifications.length === 0 ? (
                         <motion.div 
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
@@ -388,7 +383,7 @@ export default function DashboardLayout({
                         </motion.div>
                       ) : (
                         <div className="space-y-1">
-                          {notificationsList.map((notification) => (
+                          {notifications.map((notification) => (
                             <motion.div
                               key={notification.id}
                               initial={{ opacity: 0, y: 10 }}
@@ -428,7 +423,7 @@ export default function DashboardLayout({
                       )}
                     </div>
                   </ScrollArea>
-                  {notificationsList.length > 0 && (
+                  {notifications.length > 0 && (
                     <div className="sticky bottom-0 p-2 border-t bg-gray-50/50 backdrop-blur-sm">
                       <Link href="/dashboard/notifications">
                         <Button

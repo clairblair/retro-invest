@@ -7,12 +7,9 @@ import {
   ArrowDownIcon,
   CurrencyDollarIcon,
   BanknotesIcon,
-  CreditCardIcon,
   QrCodeIcon,
   ArrowPathIcon,
-  XMarkIcon,
   CheckCircleIcon,
-  ExclamationCircleIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
   MagnifyingGlassIcon,
@@ -21,8 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
@@ -44,15 +40,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Separator } from "@/components/ui/separator"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 import { Inter, Poppins } from 'next/font/google'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -223,39 +212,47 @@ const withdrawalAccounts: WithdrawalAccount[] = [
   },
 ]
 
+interface Balance {
+  currency: string
+  amount: number
+  change: string
+  changeType: 'increase' | 'decrease'
+}
+
 export default function WalletPage() {
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('naira')
   const [showDepositDialog, setShowDepositDialog] = useState(false)
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false)
   const [selectedCurrency, setSelectedCurrency] = useState('NGN')
-  const [amount, setAmount] = useState('')
-  const [paymentMethod, setPaymentMethod] = useState('')
+  const [amount, setAmount] = useState<string>('')
+  const [selectedMethod, setSelectedMethod] = useState('')
+  const [withdrawalMethod, setWithdrawalMethod] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
   const [depositStep, setDepositStep] = useState(1)
-  const [withdrawStep, setWithdrawStep] = useState(1)
-  const [depositProof, setDepositProof] = useState<File | null>(null)
-  const [depositReference, setDepositReference] = useState('')
   const [depositFromAccount, setDepositFromAccount] = useState('')
-  const [selectedDepositAccount, setSelectedDepositAccount] = useState<DepositAccount | null>(null)
-  const [withdrawalAccount, setWithdrawalAccount] = useState<WithdrawalAccount | null>(null)
-  const [withdrawalAmount, setWithdrawalAmount] = useState('')
-  const [withdrawalMethod, setWithdrawalMethod] = useState('')
-  const [withdrawalFee, setWithdrawalFee] = useState(0)
+  const [depositReference, setDepositReference] = useState('')
+  const [depositProof, setDepositProof] = useState<File | null>(null)
+  const [withdrawalStep, setWithdrawalStep] = useState(1)
+  const [withdrawalFromAccount, setWithdrawalFromAccount] = useState('')
+  const [withdrawalToAccount, setWithdrawalToAccount] = useState<WithdrawalAccount | null>(null)
+  const [withdrawalReference, setWithdrawalReference] = useState('')
+  const [withdrawalProof, setWithdrawalProof] = useState<File | null>(null)
+  const [depositTotal, setDepositTotal] = useState(0)
   const [withdrawalTotal, setWithdrawalTotal] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
-  const transactionsPerPage = 5
+  const [itemsPerPage, setItemsPerPage] = useState(10)
   const [showAllTransactions, setShowAllTransactions] = useState(false)
   const [transactionFilter, setTransactionFilter] = useState('all')
   const [transactionSort, setTransactionSort] = useState('date')
   const [searchQuery, setSearchQuery] = useState('')
 
   // Calculate pagination
-  const indexOfLastTransaction = currentPage * transactionsPerPage
-  const indexOfFirstTransaction = indexOfLastTransaction - transactionsPerPage
+  const indexOfLastTransaction = currentPage * itemsPerPage
+  const indexOfFirstTransaction = indexOfLastTransaction - itemsPerPage
   const currentTransactions = recentTransactions.slice(indexOfFirstTransaction, indexOfLastTransaction)
-  const totalPages = Math.ceil(recentTransactions.length / transactionsPerPage)
+  const totalPages = Math.ceil(recentTransactions.length / itemsPerPage)
 
   // Filter and sort transactions
   const filteredTransactions = recentTransactions
@@ -332,7 +329,7 @@ export default function WalletPage() {
   }
 
   const handleDeposit = async () => {
-    if (!amount || !paymentMethod) {
+    if (!amount || !selectedMethod) {
       toast.error('Error', {
         description: 'Please fill in all required fields.',
       })
@@ -340,7 +337,7 @@ export default function WalletPage() {
     }
 
     // Enforce bank transfer for NGN deposits
-    if (selectedCurrency === 'NGN' && paymentMethod !== 'bank') {
+    if (selectedCurrency === 'NGN' && selectedMethod !== 'bank') {
       toast.error('Error', {
         description: 'NGN deposits can only be made via bank transfer.',
       })
@@ -365,7 +362,7 @@ export default function WalletPage() {
           setShowDepositDialog(false)
           setDepositStep(1)
           setAmount('')
-          setPaymentMethod('')
+          setSelectedMethod('')
           setDepositProof(null)
           setDepositReference('')
           setDepositFromAccount('')
@@ -397,8 +394,8 @@ export default function WalletPage() {
     }
   }
 
-  const handleWithdraw = async () => {
-    if (!withdrawalAmount || !withdrawalMethod) {
+  const handleWithdrawal = async () => {
+    if (!amount || !withdrawalMethod) {
       toast.error('Error', {
         description: 'Please fill in all required fields.',
       })
@@ -414,7 +411,8 @@ export default function WalletPage() {
     }
 
     // Validate bank account details for NGN withdrawals
-    if (selectedCurrency === 'NGN' && (!withdrawalAccount?.bankName || !withdrawalAccount?.accountNumber || !withdrawalAccount?.accountName)) {
+    if (selectedCurrency === 'NGN' && withdrawalMethod === 'bank' && 
+        (!withdrawalToAccount?.bankName || !withdrawalToAccount?.accountNumber || !withdrawalToAccount?.accountName)) {
       toast.error('Error', {
         description: 'Please provide complete bank account details.',
       })
@@ -426,8 +424,8 @@ export default function WalletPage() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000))
       
-      if (withdrawStep === 1) {
-        setWithdrawStep(2)
+      if (withdrawalStep === 1) {
+        setWithdrawalStep(2)
       } else {
         setShowSuccessAnimation(true)
         toast.success('Withdrawal initiated', {
@@ -435,10 +433,10 @@ export default function WalletPage() {
         })
         setTimeout(() => {
           setShowWithdrawDialog(false)
-          setWithdrawStep(1)
-          setWithdrawalAmount('')
+          setWithdrawalStep(1)
+          setAmount('')
           setWithdrawalMethod('')
-          setWithdrawalAccount(null)
+          setWithdrawalToAccount(null)
           setShowSuccessAnimation(false)
         }, 2000)
       }
@@ -452,13 +450,12 @@ export default function WalletPage() {
   }
 
   useEffect(() => {
-    if (withdrawalAmount) {
-      const amount = Number(withdrawalAmount)
-      const fee = calculateWithdrawalFee(amount, selectedCurrency)
-      setWithdrawalFee(fee)
-      setWithdrawalTotal(amount - fee)
+    if (amount) {
+      const amountValue = Number(amount)
+      const fee = calculateWithdrawalFee(amountValue, selectedCurrency)
+      setWithdrawalTotal(amountValue - fee)
     }
-  }, [withdrawalAmount, selectedCurrency])
+  }, [amount, selectedCurrency])
 
   const getBalance = (currency: string) => {
     return walletBalances.find(balance => balance.currency === currency)
@@ -592,7 +589,7 @@ export default function WalletPage() {
                           <Button
                             onClick={() => {
                               setSelectedCurrency(balance.currency)
-                              setSelectedDepositAccount(depositAccounts.find(acc => acc.currency === balance.currency) || null)
+                              setWithdrawalToAccount(withdrawalAccounts.find(acc => acc.currency === balance.currency) || null)
                               setShowDepositDialog(true)
                             }}
                             className="w-full sm:w-auto h-12 px-6 py-3 bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] text-white hover:from-[#ff6868] hover:via-[#ff8e7f] hover:to-[#ffa988] shadow-lg hover:shadow-xl transition-all duration-300"
@@ -640,8 +637,8 @@ export default function WalletPage() {
                                 <div>
                                   <Label className="text-gray-700 font-medium">Payment Method</Label>
                                   <Select 
-                                    value={paymentMethod} 
-                                    onValueChange={setPaymentMethod}
+                                    value={selectedMethod} 
+                                    onValueChange={setSelectedMethod}
                                     disabled={balance.currency === 'NGN'}
                                   >
                                     <SelectTrigger className="mt-1 bg-white/50 backdrop-blur-sm border-2">
@@ -676,30 +673,30 @@ export default function WalletPage() {
                                   </AlertDescription>
                                 </Alert>
                                 <div className="rounded-lg border-2 p-4 bg-white/50 backdrop-blur-sm">
-                                  {selectedDepositAccount?.bankName ? (
+                                  {withdrawalToAccount?.bankName ? (
                                     <div className="space-y-2">
                                       <div className="flex justify-between text-sm">
                                         <span className="text-gray-500 font-medium">Bank Name</span>
-                                        <span className="font-semibold">{selectedDepositAccount.bankName}</span>
+                                        <span className="font-semibold">{withdrawalToAccount.bankName}</span>
                                       </div>
                                       <div className="flex justify-between text-sm">
                                         <span className="text-gray-500 font-medium">Account Number</span>
-                                        <span className="font-semibold">{selectedDepositAccount.accountNumber}</span>
+                                        <span className="font-semibold">{withdrawalToAccount.accountNumber}</span>
                                       </div>
                                       <div className="flex justify-between text-sm">
                                         <span className="text-gray-500 font-medium">Account Name</span>
-                                        <span className="font-semibold">{selectedDepositAccount.accountName}</span>
+                                        <span className="font-semibold">{withdrawalToAccount.accountName}</span>
                                       </div>
                                     </div>
                                   ) : (
                                     <div className="space-y-2">
                                       <div className="flex justify-between text-sm">
                                         <span className="text-gray-500 font-medium">Network</span>
-                                        <span className="font-semibold">{selectedDepositAccount?.network}</span>
+                                        <span className="font-semibold">{withdrawalToAccount?.network}</span>
                                       </div>
                                       <div className="flex justify-between text-sm">
                                         <span className="text-gray-500 font-medium">Wallet Address</span>
-                                        <span className="font-semibold">{selectedDepositAccount?.walletAddress}</span>
+                                        <span className="font-semibold">{withdrawalToAccount?.walletAddress}</span>
                                       </div>
                                     </div>
                                   )}
@@ -710,7 +707,7 @@ export default function WalletPage() {
                                     </div>
                                     <div className="flex justify-between text-sm">
                                       <span className="text-gray-500 font-medium">Payment Method</span>
-                                      <span className="font-semibold capitalize">{paymentMethod}</span>
+                                      <span className="font-semibold capitalize">{selectedMethod}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
                                       <span className="text-gray-500 font-medium">Reference</span>
@@ -772,7 +769,7 @@ export default function WalletPage() {
                                 setShowDepositDialog(false)
                                 setDepositStep(1)
                                 setAmount('')
-                                setPaymentMethod('')
+                                setSelectedMethod('')
                                 setDepositProof(null)
                                 setDepositReference('')
                                 setDepositFromAccount('')
@@ -783,7 +780,7 @@ export default function WalletPage() {
                             </Button>
                             <Button
                               onClick={handleDeposit}
-                              disabled={isProcessing || !amount || !paymentMethod || 
+                              disabled={isProcessing || !amount || !selectedMethod || 
                                 (depositStep === 3 && (!depositFromAccount || !depositReference || !depositProof))}
                               className="w-full sm:w-auto bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] hover:from-[#ff6868] hover:via-[#ff8e7f] hover:to-[#ffa988] text-white shadow-lg hover:shadow-xl transition-all duration-300"
                             >
@@ -809,7 +806,7 @@ export default function WalletPage() {
                           <Button
                             onClick={() => {
                               setSelectedCurrency(balance.currency)
-                              setWithdrawalAccount(withdrawalAccounts.find(acc => acc.currency === balance.currency) || null)
+                              setWithdrawalToAccount(withdrawalAccounts.find(acc => acc.currency === balance.currency) || null)
                               setShowWithdrawDialog(true)
                             }}
                             variant="outline"
@@ -825,11 +822,11 @@ export default function WalletPage() {
                               Withdraw {balance.currency}
                             </DialogTitle>
                             <DialogDescription className="text-gray-600">
-                              {withdrawStep === 1 ? 'Enter withdrawal details' : 'Confirm withdrawal'}
+                              {withdrawalStep === 1 ? 'Enter withdrawal details' : 'Confirm withdrawal'}
                             </DialogDescription>
                           </DialogHeader>
                           <div className="space-y-4 py-4">
-                            {withdrawStep === 1 ? (
+                            {withdrawalStep === 1 ? (
                               <>
                                 <div>
                                   <Label className="text-gray-700 font-medium">Amount</Label>
@@ -841,8 +838,8 @@ export default function WalletPage() {
                                     )}
                                     <Input
                                       type="number"
-                                      value={withdrawalAmount}
-                                      onChange={(e) => setWithdrawalAmount(e.target.value)}
+                                      value={amount}
+                                      onChange={(e) => setAmount(e.target.value)}
                                       className="pl-10 bg-white/50 backdrop-blur-sm border-2 focus:border-[#ff5858] transition-colors"
                                       placeholder={`0.00 ${balance.currency}`}
                                     />
@@ -884,8 +881,8 @@ export default function WalletPage() {
                                     <div>
                                       <Label className="text-gray-700 font-medium">Bank Name</Label>
                                       <Input
-                                        value={withdrawalAccount?.bankName || ''}
-                                        onChange={(e) => setWithdrawalAccount(prev => ({ ...prev!, bankName: e.target.value }))}
+                                        value={withdrawalToAccount?.bankName || ''}
+                                        onChange={(e) => setWithdrawalToAccount(prev => ({ ...prev!, bankName: e.target.value }))}
                                         className="mt-1 bg-white/50 backdrop-blur-sm border-2 focus:border-[#ff5858] transition-colors"
                                         placeholder="Enter bank name"
                                       />
@@ -893,8 +890,8 @@ export default function WalletPage() {
                                     <div>
                                       <Label className="text-gray-700 font-medium">Account Number</Label>
                                       <Input
-                                        value={withdrawalAccount?.accountNumber || ''}
-                                        onChange={(e) => setWithdrawalAccount(prev => ({ ...prev!, accountNumber: e.target.value }))}
+                                        value={withdrawalToAccount?.accountNumber || ''}
+                                        onChange={(e) => setWithdrawalToAccount(prev => ({ ...prev!, accountNumber: e.target.value }))}
                                         className="mt-1 bg-white/50 backdrop-blur-sm border-2 focus:border-[#ff5858] transition-colors"
                                         placeholder="Enter account number"
                                       />
@@ -902,8 +899,8 @@ export default function WalletPage() {
                                     <div>
                                       <Label className="text-gray-700 font-medium">Account Name</Label>
                                       <Input
-                                        value={withdrawalAccount?.accountName || ''}
-                                        onChange={(e) => setWithdrawalAccount(prev => ({ ...prev!, accountName: e.target.value }))}
+                                        value={withdrawalToAccount?.accountName || ''}
+                                        onChange={(e) => setWithdrawalToAccount(prev => ({ ...prev!, accountName: e.target.value }))}
                                         className="mt-1 bg-white/50 backdrop-blur-sm border-2 focus:border-[#ff5858] transition-colors"
                                         placeholder="Enter account name"
                                       />
@@ -915,8 +912,8 @@ export default function WalletPage() {
                                     <div>
                                       <Label className="text-gray-700 font-medium">Wallet Address</Label>
                                       <Input
-                                        value={withdrawalAccount?.walletAddress || ''}
-                                        onChange={(e) => setWithdrawalAccount(prev => ({ ...prev!, walletAddress: e.target.value }))}
+                                        value={withdrawalToAccount?.walletAddress || ''}
+                                        onChange={(e) => setWithdrawalToAccount(prev => ({ ...prev!, walletAddress: e.target.value }))}
                                         className="mt-1 bg-white/50 backdrop-blur-sm border-2 focus:border-[#ff5858] transition-colors"
                                         placeholder="Enter wallet address"
                                       />
@@ -924,8 +921,8 @@ export default function WalletPage() {
                                     <div>
                                       <Label className="text-gray-700 font-medium">Network</Label>
                                       <Input
-                                        value={withdrawalAccount?.network || ''}
-                                        onChange={(e) => setWithdrawalAccount(prev => ({ ...prev!, network: e.target.value }))}
+                                        value={withdrawalToAccount?.network || ''}
+                                        onChange={(e) => setWithdrawalToAccount(prev => ({ ...prev!, network: e.target.value }))}
                                         className="mt-1 bg-white/50 backdrop-blur-sm border-2 focus:border-[#ff5858] transition-colors"
                                         placeholder="Enter network (e.g., Bitcoin, Ethereum)"
                                       />
@@ -946,7 +943,7 @@ export default function WalletPage() {
                                   <div className="space-y-2">
                                     <div className="flex justify-between text-sm">
                                       <span className="text-gray-500 font-medium">Amount</span>
-                                      <span className="font-semibold">{formatAmount(Number(withdrawalAmount), balance.currency)}</span>
+                                      <span className="font-semibold">{formatAmount(Number(amount), balance.currency)}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
                                       <span className="text-gray-500 font-medium">Withdrawal Method</span>
@@ -954,7 +951,7 @@ export default function WalletPage() {
                                     </div>
                                     <div className="flex justify-between text-sm">
                                       <span className="text-gray-500 font-medium">Fee</span>
-                                      <span className="font-semibold">{formatAmount(withdrawalFee, balance.currency)}</span>
+                                      <span className="font-semibold">{formatAmount(calculateWithdrawalFee(Number(amount), balance.currency), balance.currency)}</span>
                                     </div>
                                     <Separator className="my-2" />
                                     <div className="flex justify-between text-sm font-semibold">
@@ -967,15 +964,15 @@ export default function WalletPage() {
                                         <div className="space-y-2">
                                           <div className="flex justify-between text-sm">
                                             <span className="text-gray-500 font-medium">Bank Name</span>
-                                            <span className="font-semibold">{withdrawalAccount?.bankName}</span>
+                                            <span className="font-semibold">{withdrawalToAccount?.bankName}</span>
                                           </div>
                                           <div className="flex justify-between text-sm">
                                             <span className="text-gray-500 font-medium">Account Number</span>
-                                            <span className="font-semibold">{withdrawalAccount?.accountNumber}</span>
+                                            <span className="font-semibold">{withdrawalToAccount?.accountNumber}</span>
                                           </div>
                                           <div className="flex justify-between text-sm">
                                             <span className="text-gray-500 font-medium">Account Name</span>
-                                            <span className="font-semibold">{withdrawalAccount?.accountName}</span>
+                                            <span className="font-semibold">{withdrawalToAccount?.accountName}</span>
                                           </div>
                                         </div>
                                       </>
@@ -986,11 +983,11 @@ export default function WalletPage() {
                                         <div className="space-y-2">
                                           <div className="flex justify-between text-sm">
                                             <span className="text-gray-500 font-medium">Wallet Address</span>
-                                            <span className="font-semibold">{withdrawalAccount?.walletAddress}</span>
+                                            <span className="font-semibold">{withdrawalToAccount?.walletAddress}</span>
                                           </div>
                                           <div className="flex justify-between text-sm">
                                             <span className="text-gray-500 font-medium">Network</span>
-                                            <span className="font-semibold">{withdrawalAccount?.network}</span>
+                                            <span className="font-semibold">{withdrawalToAccount?.network}</span>
                                           </div>
                                         </div>
                                       </>
@@ -1005,20 +1002,20 @@ export default function WalletPage() {
                               variant="outline"
                               onClick={() => {
                                 setShowWithdrawDialog(false)
-                                setWithdrawStep(1)
-                                setWithdrawalAmount('')
+                                setWithdrawalStep(1)
+                                setAmount('')
                                 setWithdrawalMethod('')
-                                setWithdrawalAccount(null)
+                                setWithdrawalToAccount(null)
                               }}
                               className="w-full sm:w-auto bg-white/50 dark:bg-[#232526]/50 backdrop-blur-sm border-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                             >
                               Cancel
                             </Button>
                             <Button
-                              onClick={handleWithdraw}
-                              disabled={isProcessing || !withdrawalAmount || !withdrawalMethod || 
-                                (withdrawalMethod === 'bank' && (!withdrawalAccount?.bankName || !withdrawalAccount?.accountNumber || !withdrawalAccount?.accountName)) ||
-                                (withdrawalMethod === 'crypto' && (!withdrawalAccount?.walletAddress || !withdrawalAccount?.network))}
+                              onClick={handleWithdrawal}
+                              disabled={isProcessing || !amount || !withdrawalMethod || 
+                                (withdrawalMethod === 'bank' && (!withdrawalToAccount?.bankName || !withdrawalToAccount?.accountNumber || !withdrawalToAccount?.accountName)) ||
+                                (withdrawalMethod === 'crypto' && (!withdrawalToAccount?.walletAddress || !withdrawalToAccount?.network))}
                               className="w-full sm:w-auto bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] hover:from-[#ff6868] hover:via-[#ff8e7f] hover:to-[#ffa988] text-white shadow-lg hover:shadow-xl transition-all duration-300"
                             >
                               {isProcessing ? (
@@ -1026,7 +1023,7 @@ export default function WalletPage() {
                                   <ArrowPathIcon className="mr-2 h-4 w-4 animate-spin" />
                                   Processing...
                                 </>
-                              ) : withdrawStep === 1 ? (
+                              ) : withdrawalStep === 1 ? (
                                 'Continue'
                               ) : (
                                 'Confirm Withdrawal'

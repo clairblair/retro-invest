@@ -1,9 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import {
   BuildingOfficeIcon,
   ChartBarIcon,
@@ -11,6 +8,8 @@ import {
   UserGroupIcon,
 } from '@heroicons/react/24/outline'
 import Link from 'next/link'
+import { ArrowRightIcon } from '@heroicons/react/24/outline'
+import Image from 'next/image'
 
 const team = [
   {
@@ -64,28 +63,104 @@ const values = [
 
 export default function AboutPage() {
   return (
-    <div className="relative min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-      <section className="max-w-4xl mx-auto px-4 pt-24 pb-12 text-center">
-        <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] bg-clip-text text-transparent mb-4">About Paschal</motion.h1>
-        <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }} className="text-lg text-gray-600 dark:text-gray-300 mb-8">Empowering everyone to invest smarter and live better.</motion.p>
+    <div className="min-h-screen bg-background">
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-20 md:pt-40 md:pb-32">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#ff5858]/10 via-transparent to-transparent" />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl md:text-6xl">
+              About Us
+            </h1>
+            <p className="mt-6 text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+              Incorporated in 2023, KLTMINES, a subsidiary of KLT Trading Limited, is on a mission to empower everyone to invest smarter and live better. We provide innovative, secure, and accessible investment and trading solutions to help individuals and businesses achieve financial freedom. Guided by our core values—innovation, security, transparency, and community—we leverage technology and trust to build a more inclusive and sustainable financial future.
+            </p>
+          </div>
+        </div>
       </section>
-      <section className="max-w-3xl mx-auto px-4 mb-16 text-center">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7 }}>
-          <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">Our Story</h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">Founded in 2020, Paschal was created to democratize smart investing for everyone. Our mission is to empower individuals and businesses to achieve financial freedom through innovative, secure, and accessible investment solutions.</p>
-          <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">Our Values</h2>
-          <ul className="text-gray-600 dark:text-gray-300 mb-6 space-y-2">
-            <li><span className="font-semibold text-[#ff5858]">Innovation:</span> We leverage technology to deliver the best investment experience.</li>
-            <li><span className="font-semibold text-[#ff5858]">Security:</span> Your safety is our top priority.</li>
-            <li><span className="font-semibold text-[#ff5858]">Transparency:</span> Clear, honest communication at every step.</li>
-            <li><span className="font-semibold text-[#ff5858]">Community:</span> We grow together, as investors and as people.</li>
-          </ul>
-        </motion.div>
+
+      {/* Mission Section */}
+      <section className="py-20 bg-white dark:bg-gray-900">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Our Mission</h2>
+            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
+              To empower individuals and businesses with innovative investment solutions that drive financial growth and security.
+            </p>
+          </div>
+        </div>
       </section>
-      <section className="text-center pb-16">
-        <Button asChild size="lg" className="bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] text-white hover:opacity-90">
-          <Link href="/dashboard">Get Started</Link>
-        </Button>
+
+      {/* Vision Section */}
+      <section className="py-20 bg-gray-50 dark:bg-gray-800">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Our Vision</h2>
+            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
+              To be the leading platform for secure and profitable investments, trusted by millions worldwide.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Values Section */}
+      <section className="py-20 bg-white dark:bg-gray-900">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Our Values</h2>
+            <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+              {values.map((value) => (
+                <div key={value.name} className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm">
+                  <value.icon className="h-12 w-12 mx-auto text-[#ff5858]" />
+                  <h3 className="mt-4 text-xl font-semibold text-gray-900 dark:text-white">{value.name}</h3>
+                  <p className="mt-2 text-gray-600 dark:text-gray-300">{value.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Team Section */}
+      <section className="py-20 bg-gray-50 dark:bg-gray-800">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Our Team</h2>
+            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
+              Meet the dedicated professionals behind KLTMINES.
+            </p>
+            <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+              {team.map((member) => (
+                <div key={member.name} className="p-6 bg-white dark:bg-gray-900 rounded-lg shadow-sm">
+                  <Image src={member.image} alt={member.name} className="w-32 h-32 mx-auto rounded-full" />
+                  <h3 className="mt-4 text-xl font-semibold text-gray-900 dark:text-white">{member.name}</h3>
+                  <p className="mt-2 text-gray-600 dark:text-gray-300">{member.role}</p>
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{member.bio}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 bg-white dark:bg-gray-900">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Ready to Start Investing?</h2>
+            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
+              Join KLTMINES today and take the first step towards financial freedom.
+            </p>
+            <div className="mt-8">
+              <Button asChild className="bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] text-white hover:opacity-90">
+                <Link href="/auth/register">
+                  Get Started
+                  <ArrowRightIcon className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
       </section>
     </div>
   )

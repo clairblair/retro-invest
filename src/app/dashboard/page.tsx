@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import {
-  ArrowTrendingUpIcon,
-  BanknotesIcon,
   ChartBarIcon,
   CurrencyDollarIcon,
   ArrowUpIcon,
@@ -67,6 +65,24 @@ const recentTransactions: Transaction[] = [
     date: '2024-03-17',
     status: 'pending',
   },
+]
+
+const stats = [
+  {
+    name: 'Total Balance',
+    value: '$24,500.00',
+    change: '+12.5%',
+    changeType: 'increase',
+    description: 'Your total investment balance',
+  },
+  {
+    name: 'Daily ROI',
+    value: '$245.00',
+    change: '+2.5%',
+    changeType: 'increase',
+    description: 'Today&apos;s return on investment',
+  },
+  // ... rest of the stats ...
 ]
 
 export default function DashboardPage() {

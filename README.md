@@ -1,6 +1,6 @@
-# Paschal Investment Platform
+# KLTMINES Investment Platform
 
-A modern, advanced, and beautiful investment platform built with **Next.js**, **Tailwind CSS**, and **shadcn/ui**. Paschal offers a seamless, responsive, and secure experience for investors, with features like smart investment plans, wallet management, ROI tracking, notifications, and more.
+A modern, advanced, and beautiful investment platform built with **Next.js**, **Tailwind CSS**, and **shadcn/ui**. KLTMINES offers a seamless, responsive, and secure experience for investors, with features like smart investment plans, wallet management, ROI tracking, notifications, and more.
 
 ---
 

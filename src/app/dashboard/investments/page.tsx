@@ -7,22 +7,11 @@ import {
   ArrowTrendingUpIcon,
   ClockIcon,
   CheckCircleIcon,
-  XCircleIcon,
   ArrowPathIcon,
   ChartBarIcon,
   ArrowUpIcon,
-  ArrowDownIcon,
-  CurrencyPoundIcon,
-  CurrencyYenIcon,
-  CurrencyEuroIcon,
-  CurrencyRupeeIcon,
-  CurrencyBangladeshiIcon,
-  CurrencyDollarIcon as CurrencyDollarIconSolid,
   WalletIcon,
-  ChartPieIcon,
   CalendarIcon,
-  ShieldCheckIcon,
-  ArrowRightIcon,
   InformationCircleIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -64,7 +53,7 @@ import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { AlertCircle, TrendingUp, Shield, Clock, Zap, Sparkles } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 
 interface InvestmentPlan {
   id: string
