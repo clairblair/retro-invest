@@ -12,7 +12,6 @@ const nextConfig = {
     // your project has ESLint errors.
     ignoreDuringBuilds: true,
   },
-  output: 'standalone',
   swcMinify: true,
   images: {
     domains: ['localhost'],
