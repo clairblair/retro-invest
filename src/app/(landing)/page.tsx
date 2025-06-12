@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -113,7 +114,7 @@ const faqs = [
   },
 ]
 
-export default function LandingPage() {
+function LandingPageContent() {
   return (
     <div className="relative">
       {/* Hero Section */}
@@ -466,5 +467,13 @@ export default function LandingPage() {
         </div>
       </section>
     </div>
+  )
+}
+
+export default function LandingPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LandingPageContent />
+    </Suspense>
   )
 } 
