@@ -44,6 +44,7 @@ export default function RegisterPage() {
     password: '',
     confirmPassword: '',
     agreeToTerms: false,
+    referralCode: '',
   })
   const [currentReview, setCurrentReview] = useState(0)
 
@@ -190,6 +191,17 @@ export default function RegisterPage() {
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                   className="mt-1 h-11 bg-white border border-gray-200 focus:border-orange-400 focus:ring-orange-200"
                   required
+                />
+              </div>
+              <div>
+                <Label htmlFor="referralCode" className="text-sm font-medium text-gray-700">Referral Code <span className="text-gray-400">(optional)</span></Label>
+                <Input
+                  id="referralCode"
+                  type="text"
+                  placeholder="Enter referral code (if any)"
+                  value={formData.referralCode}
+                  onChange={e => setFormData({ ...formData, referralCode: e.target.value })}
+                  className="mt-1 h-11 bg-white border border-gray-200 focus:border-orange-400 focus:ring-orange-200"
                 />
               </div>
               <div className="flex items-center space-x-2">

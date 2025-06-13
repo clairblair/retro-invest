@@ -17,7 +17,6 @@ import { useTheme } from 'next-themes'
 const navItems = [
   { name: 'Home', href: '/' },
   { name: 'About', href: '/about' },
-  { name: 'Features', href: '/features' },
   { name: 'How It Works', href: '/how-it-works' },
   { name: 'Testimonials', href: '/testimonials' },
   { name: 'FAQ', href: '/faq' },
@@ -198,11 +197,7 @@ export default function LandingLayout({
             <div>
               <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Resources</h4>
               <ul className="mt-4 space-y-2">
-                <li>
-                  <Link href="/blog" className="text-sm text-gray-600 dark:text-gray-400 hover:text-[#ff5858] transition-colors">
-                    Blog
-                  </Link>
-                </li>
+     
                 <li>
                   <Link href="/faq" className="text-sm text-gray-600 dark:text-gray-400 hover:text-[#ff5858] transition-colors">
                     FAQ

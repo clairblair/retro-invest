@@ -11,37 +11,37 @@ const testimonials = [
     name: 'David Thompson',
     role: 'Tech Entrepreneur',
     image: '/testimonials/david.jpg',
-    quote: "Paschal has transformed my investment strategy. The platform's ease of use and consistent returns have made it an essential part of my financial portfolio."
+    quote: "KLTMINES has transformed my investment strategy. The platform's ease of use and consistent returns have made it an essential part of my financial portfolio."
   },
   {
     name: 'Maria Rodriguez',
     role: 'Small Business Owner',
     image: '/testimonials/maria.jpg',
-    quote: "As a small business owner, I needed a reliable investment platform. Paschal has exceeded my expectations with their transparent processes and excellent returns."
+    quote: "As a small business owner, I needed a reliable investment platform. KLTMINES has exceeded my expectations with their transparent processes and excellent returns."
   },
   {
     name: 'James Wilson',
     role: 'Retired Professional',
     image: '/testimonials/james.jpg',
-    quote: "The daily ROI and professional support from Paschal have made my retirement planning much more effective. I highly recommend their services."
+    quote: "The daily ROI and professional support from KLTMINES have made my retirement planning much more effective. I highly recommend their services."
   },
   {
     name: 'Sarah Chen',
     role: 'Financial Analyst',
     image: '/testimonials/sarah.jpg',
-    quote: "From a professional perspective, I'm impressed by Paschal's investment strategies and risk management. Their platform is truly innovative."
+    quote: "From a professional perspective, I'm impressed by KLTMINES's investment strategies and risk management. Their platform is truly innovative."
   },
   {
     name: 'Robert Johnson',
     role: 'Real Estate Developer',
     image: '/testimonials/robert.jpg',
-    quote: "Paschal has become an integral part of my investment portfolio. Their consistent returns and professional service are unmatched."
+    quote: "KLTMINES has become an integral part of my investment portfolio. Their consistent returns and professional service are unmatched."
   },
   {
     name: 'Emily Parker',
     role: 'Marketing Director',
     image: '/testimonials/emily.jpg',
-    quote: "The user-friendly interface and excellent customer support make investing with Paschal a pleasure. I've seen remarkable growth in my investments."
+    quote: "The user-friendly interface and excellent customer support make investing with KLTMINES a pleasure. I've seen remarkable growth in my investments."
   }
 ]
 

@@ -1,5 +1,3 @@
-'use client'
-
 import { Button } from '@/components/ui/button'
 import {
   BuildingOfficeIcon,
@@ -132,7 +130,7 @@ export default function AboutPage() {
             <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
               {team.map((member) => (
                 <div key={member.name} className="p-6 bg-white dark:bg-gray-900 rounded-lg shadow-sm">
-                  <Image src={member.image} alt={member.name} className="w-32 h-32 mx-auto rounded-full" />
+                  <Image src={member.image} alt={member.name} width={128} height={128} className="w-32 h-32 mx-auto rounded-full" />
                   <h3 className="mt-4 text-xl font-semibold text-gray-900 dark:text-white">{member.name}</h3>
                   <p className="mt-2 text-gray-600 dark:text-gray-300">{member.role}</p>
                   <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{member.bio}</p>

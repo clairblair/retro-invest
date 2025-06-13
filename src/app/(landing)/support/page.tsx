@@ -22,37 +22,20 @@ const contactMethods = [
     link: 'mailto:support@kltmines.com',
   },
   {
-    name: 'Phone Support',
+    name: 'Telegram Support',
     description: 'Speak directly with our support team',
     icon: PhoneIcon,
-    contact: '+234 800 123 4567',
-    link: 'tel:+2348001234567',
-  },
-  {
-    name: 'Live Chat',
-    description: 'Chat with our support team in real-time',
-    icon: ChatBubbleLeftRightIcon,
-    contact: 'Available 24/7',
-    link: '#',
-  },
+    contact: 'https://t.me/kltmines',
+    link: 'https://t.me/kltmines',
+  }
 ]
 
 const supportHours = [
   {
     name: 'Customer Support',
-    hours: '24/7',
+    hours: '0-24hrs',
     icon: ClockIcon,
-  },
-  {
-    name: 'Technical Support',
-    hours: 'Monday - Friday, 9:00 AM - 6:00 PM WAT',
-    icon: ClockIcon,
-  },
-  {
-    name: 'Office Location',
-    hours: 'Lagos, Nigeria',
-    icon: MapPinIcon,
-  },
+  }
 ]
 
 export default function SupportPage() {
@@ -81,7 +64,7 @@ export default function SupportPage() {
       {/* Contact Methods */}
       <section className="py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-2">
             {contactMethods.map((method, index) => (
               <motion.div
                 key={method.name}
@@ -194,7 +177,7 @@ export default function SupportPage() {
               We're here when you need us
             </p>
           </div>
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-8 sm:grid-cols-1 lg:grid-cols-1">
             {supportHours.map((item, index) => (
               <motion.div
                 key={item.name}
