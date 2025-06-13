@@ -14,8 +14,17 @@ import {
   MagnifyingGlassIcon,
   FunnelIcon,
   ArrowDownTrayIcon,
+  GiftIcon,
+  SparklesIcon,
+  LockClosedIcon,
+  CheckCircleIcon,
 } from '@heroicons/react/24/outline'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { motion } from 'framer-motion'
@@ -38,6 +47,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 interface RoiTransaction {
   id: number
@@ -102,6 +112,14 @@ const stats = [
   // ... rest of the stats ...
 ]
 
+const BONUS_WAIT_DAYS = 15;
+const WELCOME_BONUS = 0.05; // 5%
+
+function daysBetween(date1: Date, date2: Date) {
+  const msPerDay = 24 * 60 * 60 * 1000;
+  return Math.floor((date2.getTime() - date1.getTime()) / msPerDay);
+}
+
 export default function RoiPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [showAllTransactions, setShowAllTransactions] = useState(false)
@@ -110,6 +128,17 @@ export default function RoiPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
+  const [lastBonusWithdrawal, setLastBonusWithdrawal] = useState<Date | null>(() => {
+    // Simulate: never withdrawn before
+    return null;
+  });
+  const [activeInvestmentDate] = useState(() => {
+    // Simulate: user became active 16 days ago
+    const d = new Date();
+    d.setDate(d.getDate() - 16);
+    return d;
+  });
+  const [bonusWithdrawn, setBonusWithdrawn] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -155,6 +184,23 @@ export default function RoiPage() {
   const indexOfLastTransaction = currentPage * transactionsPerPage
   const indexOfFirstTransaction = indexOfLastTransaction - transactionsPerPage
   const currentTransactions = filteredTransactions.slice(indexOfFirstTransaction, indexOfLastTransaction)
+
+  // Calculate eligibility
+  const now = new Date();
+  let eligible = false;
+  let daysLeft = BONUS_WAIT_DAYS;
+  if (!lastBonusWithdrawal) {
+    daysLeft = BONUS_WAIT_DAYS - daysBetween(activeInvestmentDate, now);
+    eligible = daysLeft <= 0;
+  } else {
+    daysLeft = BONUS_WAIT_DAYS - daysBetween(new Date(lastBonusWithdrawal), now);
+    eligible = daysLeft <= 0;
+  }
+
+  const handleWithdrawBonus = () => {
+    setLastBonusWithdrawal(new Date());
+    setBonusWithdrawn(true);
+  };
 
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber)
@@ -295,34 +341,98 @@ export default function RoiPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
-              whileHover={{ y: -5, transition: { type: "spring", stiffness: 400, damping: 17 } }}
+              whileHover={{ y: -8, scale: 1.03, boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)' }}
             >
-              <Card className="overflow-hidden border-2 hover:border-blue-500 transition-all duration-300 shadow-lg hover:shadow-xl">
-                <CardHeader className="border-b bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="rounded-full bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] p-2 text-white shadow-lg">
-                        <CalendarIcon className="h-6 w-6" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg sm:text-xl">Weekly ROI</CardTitle>
-                        <p className="text-sm text-gray-500">This week's earnings</p>
-                      </div>
+              <Card className="overflow-hidden border-2 bg-white/60 dark:bg-[#232526]/60 backdrop-blur-xl shadow-2xl hover:shadow-3xl transition-all duration-300 relative">
+                <div className="absolute -top-6 right-6 z-10 animate-bounce">
+                  <GiftIcon className="h-12 w-12 text-yellow-400 drop-shadow-lg" />
+                </div>
+                <CardHeader className="border-b bg-gradient-to-r from-[#ff5858]/20 via-[#ff7e5f]/20 to-[#ff9966]/20">
+                  <div className="flex items-center space-x-4">
+                    <div className="rounded-full bg-gradient-to-r from-green-400 to-blue-500 p-2 text-white shadow-lg">
+                      <SparklesIcon className="h-7 w-7 animate-spin-slow" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
+                        BONUS
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="ml-1 cursor-pointer text-blue-400">ⓘ</span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <span>Bonuses are withdrawable every 15 days of active investment.</span>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </CardTitle>
+                      <p className="text-sm text-gray-500">Referral & Welcome Bonuses</p>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="p-4 sm:p-6">
-                  <div className="space-y-4">
-                    <div className="rounded-lg bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-4 shadow-inner">
-                      <p className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] bg-clip-text text-transparent">
-                        ₦60,000
-                      </p>
-                      <p className="text-sm text-gray-500 mt-1">Weekly earnings</p>
+                <CardContent className="p-4 sm:p-6 space-y-4">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium flex items-center gap-1">
+                        Referral Bonus
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <LockClosedIcon className="h-4 w-4 text-gray-400" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <span>Still under review</span>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </span>
+                      <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">Reviewing</span>
                     </div>
-                    <div className="flex justify-between text-sm sm:text-base">
-                      <span className="text-gray-500">Weekly Growth</span>
-                      <span className="text-green-600 font-medium">+5.2%</span>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium flex items-center gap-1">
+                        Welcome Bonus
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <SparklesIcon className="h-4 w-4 text-yellow-400" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <span>5% of your first investment</span>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </span>
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">5%</span>
                     </div>
+                  </div>
+                  <div className="mt-4 flex flex-col gap-2 items-center">
+                    {/* Progress/Countdown */}
+                    <div className="w-full flex items-center gap-2">
+                      {eligible ? (
+                        <span className="text-green-600 text-xs flex items-center gap-1"><CheckCircleIcon className="h-4 w-4" />Available</span>
+                      ) : (
+                        <span className="text-gray-400 text-xs flex items-center gap-1"><LockClosedIcon className="h-4 w-4" />Locked</span>
+                      )}
+                      <div className="flex-1">
+                        <Progress value={100 * (BONUS_WAIT_DAYS - (daysLeft > 0 ? daysLeft : 0)) / BONUS_WAIT_DAYS} className="h-2 bg-gray-200" />
+                      </div>
+                      <span className="text-xs text-gray-500 w-16 text-right">{eligible ? 'Now' : daysLeft > 0 ? daysLeft + 'd' : '0d'}</span>
+                    </div>
+                    <Button
+                      className={
+                        `w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600 transition-all duration-300 mt-2 ${eligible ? 'animate-pulse shadow-lg' : 'opacity-60 cursor-not-allowed'}`
+                      }
+                      onClick={handleWithdrawBonus}
+                      disabled={!eligible}
+                    >
+                      {eligible ? 'Withdraw Bonus' : 'Withdraw Bonus (Available in ' + (daysLeft > 0 ? daysLeft : 0) + ' days)'}
+                    </Button>
+                    {!eligible && (
+                      <p className="text-xs text-gray-500 mt-2 text-center">Bonuses can only be withdrawn after 15 days of active investment. After withdrawal, the next bonus will be available in another 15 days.</p>
+                    )}
+                    {bonusWithdrawn && (
+                      <p className="text-xs text-green-600 mt-2 text-center animate-bounce">Bonus withdrawn! Next withdrawal available in 15 days.</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>

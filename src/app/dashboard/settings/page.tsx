@@ -45,12 +45,6 @@ const notificationSettings: NotificationSetting[] = [
     enabled: true,
   },
   {
-    id: 'sms',
-    title: 'SMS Notifications',
-    description: 'Receive notifications via SMS',
-    enabled: false,
-  },
-  {
     id: 'push',
     title: 'Push Notifications',
     description: 'Receive push notifications',
@@ -80,8 +74,11 @@ export default function SettingsPage() {
   })
   const [cryptoDetails, setCryptoDetails] = useState({
     btc: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+    btcNetwork: '',
     eth: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
+    ethNetwork: '',
     usdt: 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t',
+    usdtNetwork: '',
   })
   const [activeMobileTab, setActiveMobileTab] = useState('profile')
 
@@ -743,6 +740,14 @@ export default function SettingsPage() {
                 onChange={(e) => setCryptoDetails({ ...cryptoDetails, btc: e.target.value })}
                 className="bg-white/50 dark:bg-[#232526]/50 backdrop-blur-sm"
               />
+              <Label htmlFor="btc-network" className="text-xs text-gray-500">Network (e.g., BTC, BEP20, etc.)</Label>
+              <Input
+                id="btc-network"
+                value={cryptoDetails.btcNetwork}
+                onChange={e => setCryptoDetails({ ...cryptoDetails, btcNetwork: e.target.value })}
+                placeholder="Enter BTC network (optional)"
+                className="bg-white/50 dark:bg-[#232526]/50 backdrop-blur-sm"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="eth-address">Ethereum (ETH) Address</Label>
@@ -752,6 +757,14 @@ export default function SettingsPage() {
                 onChange={(e) => setCryptoDetails({ ...cryptoDetails, eth: e.target.value })}
                 className="bg-white/50 dark:bg-[#232526]/50 backdrop-blur-sm"
               />
+              <Label htmlFor="eth-network" className="text-xs text-gray-500">Network (e.g., ERC20, BEP20, etc.)</Label>
+              <Input
+                id="eth-network"
+                value={cryptoDetails.ethNetwork}
+                onChange={e => setCryptoDetails({ ...cryptoDetails, ethNetwork: e.target.value })}
+                placeholder="Enter ETH network (optional)"
+                className="bg-white/50 dark:bg-[#232526]/50 backdrop-blur-sm"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="usdt-address">USDT Address</Label>
@@ -759,6 +772,14 @@ export default function SettingsPage() {
                 id="usdt-address" 
                 value={cryptoDetails.usdt}
                 onChange={(e) => setCryptoDetails({ ...cryptoDetails, usdt: e.target.value })}
+                className="bg-white/50 dark:bg-[#232526]/50 backdrop-blur-sm"
+              />
+              <Label htmlFor="usdt-network" className="text-xs text-gray-500">Network (e.g., TRC20, ERC20, BEP20, etc.)</Label>
+              <Input
+                id="usdt-network"
+                value={cryptoDetails.usdtNetwork}
+                onChange={e => setCryptoDetails({ ...cryptoDetails, usdtNetwork: e.target.value })}
+                placeholder="Enter USDT network (e.g., TRC20)"
                 className="bg-white/50 dark:bg-[#232526]/50 backdrop-blur-sm"
               />
             </div>
