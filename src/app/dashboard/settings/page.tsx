@@ -73,10 +73,6 @@ export default function SettingsPage() {
     accountName: 'John Doe',
   })
   const [cryptoDetails, setCryptoDetails] = useState({
-    btc: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-    btcNetwork: '',
-    eth: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
-    ethNetwork: '',
     usdt: 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t',
     usdtNetwork: '',
   })
@@ -228,8 +224,7 @@ export default function SettingsPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="NGN">Nigerian Naira (₦)</SelectItem>
-                          <SelectItem value="USD">US Dollar ($)</SelectItem>
-                          <SelectItem value="EUR">Euro (€)</SelectItem>
+                          <SelectItem value="USDT">Tether (USDT)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -388,7 +383,7 @@ export default function SettingsPage() {
                         </div>
                         <div>
                           <p className="font-medium text-base sm:text-lg">Crypto Wallet</p>
-                          <p className="text-sm text-gray-500">BTC, ETH, USDT</p>
+                          <p className="text-sm text-gray-500">USDT</p>
                         </div>
                       </div>
                       <Button 
@@ -485,8 +480,7 @@ export default function SettingsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="NGN">Nigerian Naira (₦)</SelectItem>
-                        <SelectItem value="USD">US Dollar ($)</SelectItem>
-                        <SelectItem value="EUR">Euro (€)</SelectItem>
+                        <SelectItem value="USDT">Tether (USDT)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -622,7 +616,7 @@ export default function SettingsPage() {
                       </div>
                       <div>
                         <p className="font-medium text-base sm:text-lg">Crypto Wallet</p>
-                        <p className="text-sm text-gray-500">BTC, ETH, USDT</p>
+                        <p className="text-sm text-gray-500">USDT</p>
                       </div>
                     </div>
                     <Button 
@@ -733,40 +727,6 @@ export default function SettingsPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="btc-address">Bitcoin (BTC) Address</Label>
-              <Input 
-                id="btc-address" 
-                value={cryptoDetails.btc}
-                onChange={(e) => setCryptoDetails({ ...cryptoDetails, btc: e.target.value })}
-                className="bg-white/50 dark:bg-[#232526]/50 backdrop-blur-sm"
-              />
-              <Label htmlFor="btc-network" className="text-xs text-gray-500">Network (e.g., BTC, BEP20, etc.)</Label>
-              <Input
-                id="btc-network"
-                value={cryptoDetails.btcNetwork}
-                onChange={e => setCryptoDetails({ ...cryptoDetails, btcNetwork: e.target.value })}
-                placeholder="Enter BTC network (optional)"
-                className="bg-white/50 dark:bg-[#232526]/50 backdrop-blur-sm"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="eth-address">Ethereum (ETH) Address</Label>
-              <Input 
-                id="eth-address" 
-                value={cryptoDetails.eth}
-                onChange={(e) => setCryptoDetails({ ...cryptoDetails, eth: e.target.value })}
-                className="bg-white/50 dark:bg-[#232526]/50 backdrop-blur-sm"
-              />
-              <Label htmlFor="eth-network" className="text-xs text-gray-500">Network (e.g., ERC20, BEP20, etc.)</Label>
-              <Input
-                id="eth-network"
-                value={cryptoDetails.ethNetwork}
-                onChange={e => setCryptoDetails({ ...cryptoDetails, ethNetwork: e.target.value })}
-                placeholder="Enter ETH network (optional)"
-                className="bg-white/50 dark:bg-[#232526]/50 backdrop-blur-sm"
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="usdt-address">USDT Address</Label>
               <Input 
                 id="usdt-address" 
@@ -834,9 +794,6 @@ export default function SettingsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="NGN">Nigerian Naira (₦)</SelectItem>
-                  <SelectItem value="USD">US Dollar ($)</SelectItem>
-                  <SelectItem value="BTC">Bitcoin (BTC)</SelectItem>
-                  <SelectItem value="ETH">Ethereum (ETH)</SelectItem>
                   <SelectItem value="USDT">Tether (USDT)</SelectItem>
                 </SelectContent>
               </Select>

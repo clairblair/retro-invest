@@ -154,8 +154,8 @@ export default function InvestmentsPage() {
                   <span className="text-base font-medium text-gray-300">/ day</span>
                 </p>
                 <p className="mt-1 text-sm text-gray-400">
-                  ${plan.minAmount} - ${plan.maxAmount}
-                              </p>
+                  ${plan.minAmount} - ${plan.maxAmount} USDT
+                </p>
                 <ul className="mt-6 space-y-3">
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-center">
@@ -183,8 +183,8 @@ export default function InvestmentsPage() {
                     <div className="grid gap-4 py-4">
                                 <div>
                         <label htmlFor="amount" className="block text-sm font-medium">
-                          Amount (USD)
-                                  </label>
+                          Amount (USDT)
+                        </label>
                                     <Input
                           id="amount"
                           type="number"
@@ -195,8 +195,8 @@ export default function InvestmentsPage() {
                           className="mt-1"
                         />
                         <p className="mt-1 text-sm text-gray-500">
-                          Min: ${selectedPlan.minAmount}, Max: ${selectedPlan.maxAmount}
-                                  </p>
+                          Min: ${selectedPlan.minAmount} USDT, Max: ${selectedPlan.maxAmount} USDT
+                        </p>
                                 </div>
                                 <div>
                         <label className="block text-sm font-medium">Payment Method</label>

@@ -43,7 +43,7 @@ interface WithdrawalTransaction {
   date: string
   status: 'completed' | 'pending' | 'failed'
   type: 'bank' | 'crypto'
-  currency: 'NGN' | 'USD' | 'BTC'
+  currency: 'NGN' | 'USDT'
 }
 
 const withdrawalTransactions: WithdrawalTransaction[] = [
@@ -60,19 +60,11 @@ const withdrawalTransactions: WithdrawalTransaction[] = [
     amount: '$500',
     date: '2024-03-19',
     status: 'pending',
-    type: 'bank',
-    currency: 'USD',
+    type: 'crypto',
+    currency: 'USDT',
   },
   {
     id: 3,
-    amount: '0.05 BTC',
-    date: '2024-03-18',
-    status: 'completed',
-    type: 'crypto',
-    currency: 'BTC',
-  },
-  {
-    id: 4,
     amount: '₦75,000',
     date: '2024-03-17',
     status: 'failed',
@@ -470,8 +462,7 @@ export default function WithdrawalsPage() {
                     <SelectContent>
                       <SelectItem value="all">All Currencies</SelectItem>
                       <SelectItem value="NGN">NGN</SelectItem>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="BTC">BTC</SelectItem>
+                      <SelectItem value="USDT">USDT</SelectItem>
                     </SelectContent>
                   </Select>
                   <Button

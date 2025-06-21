@@ -88,25 +88,11 @@ const walletBalances: WalletBalance[] = [
     locked: 100000,
   },
   {
-    currency: 'USD',
+    currency: 'USDT',
     amount: 2500,
     available: 2000,
     pending: 300,
     locked: 200,
-  },
-  {
-    currency: 'BTC',
-    amount: 0.05,
-    available: 0.04,
-    pending: 0.005,
-    locked: 0.005,
-  },
-  {
-    currency: 'ETH',
-    amount: 1.2,
-    available: 1.0,
-    pending: 0.1,
-    locked: 0.1,
   },
 ]
 
@@ -127,20 +113,9 @@ const depositAccounts: DepositAccount[] = [
     accountName: 'Investment Platform',
   },
   {
-    currency: 'USD',
-    bankName: 'Chase Bank',
-    accountNumber: '9876543210',
-    accountName: 'Investment Platform',
-  },
-  {
-    currency: 'BTC',
-    walletAddress: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-    network: 'Bitcoin',
-  },
-  {
-    currency: 'ETH',
-    walletAddress: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
-    network: 'Ethereum (ERC20)',
+    currency: 'USDT',
+    walletAddress: 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t',
+    network: 'TRC20',
   },
 ]
 
@@ -161,20 +136,9 @@ const withdrawalAccounts: WithdrawalAccount[] = [
     accountName: 'John Doe',
   },
   {
-    currency: 'USD',
-    bankName: 'Chase Bank',
-    accountNumber: '9876543210',
-    accountName: 'John Doe',
-  },
-  {
-    currency: 'BTC',
-    walletAddress: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-    network: 'Bitcoin',
-  },
-  {
-    currency: 'ETH',
-    walletAddress: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
-    network: 'Ethereum (ERC20)',
+    currency: 'USDT',
+    walletAddress: 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t',
+    network: 'TRC20',
   },
 ]
 
@@ -352,12 +316,8 @@ export default function WalletPage() {
     switch (currency) {
       case 'NGN':
         return amount * 0.01 // 1% fee for NGN
-      case 'USD':
-        return amount * 0.02 // 2% fee for USD
-      case 'BTC':
-        return 0.0001 // Fixed fee for BTC
-      case 'ETH':
-        return 0.001 // Fixed fee for ETH
+      case 'USDT':
+        return amount * 0.02 // 2% fee for USDT
       default:
         return 0
     }
@@ -433,7 +393,7 @@ export default function WalletPage() {
   const formatAmount = (amount: number, currency: string) => {
     if (currency === 'NGN') {
       return `₦${amount.toLocaleString()}`
-    } else if (currency === 'USD') {
+    } else if (currency === 'USDT') {
       return `$${amount.toLocaleString()}`
     } else {
       return `${amount} ${currency}`
@@ -497,10 +457,10 @@ export default function WalletPage() {
         </div>
       </motion.div>
 
-      <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
         {isLoading ? (
           <>
-            {[1, 2, 3, 4].map((i) => (
+            {[1, 2].map((i) => (
               <Card key={i} className="overflow-hidden border-2">
                 <CardHeader className="border-b bg-gray-50/50">
                   <Skeleton className="h-8 w-3/4" />
@@ -530,7 +490,7 @@ export default function WalletPage() {
                       <div className="rounded-full bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] p-2 text-white shadow-lg">
                         {balance.currency === 'NGN' ? (
                           <BanknotesIcon className="h-6 w-6" />
-                        ) : balance.currency === 'USD' ? (
+                        ) : balance.currency === 'USDT' ? (
                           <CurrencyDollarIcon className="h-6 w-6" />
                         ) : (
                           <QrCodeIcon className="h-6 w-6" />
