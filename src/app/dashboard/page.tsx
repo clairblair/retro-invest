@@ -220,7 +220,7 @@ export default function DashboardPage() {
                     </div>
                     <div>
                       <CardTitle className="text-lg">Total Balance</CardTitle>
-                      <p className="text-sm text-gray-500">Your current balance</p>
+                      <p className="text-sm text-gray-500">Your main balance</p>
                     </div>
                   </div>
                 </CardHeader>
@@ -367,7 +367,7 @@ export default function DashboardPage() {
                       </div>
                       <div>
                         <CardTitle className="text-lg">Total Balance</CardTitle>
-                        <p className="text-sm text-gray-500">Your current balance</p>
+                        <p className="text-sm text-gray-500">Your main balance</p>
                       </div>
                     </div>
                   </div>
@@ -402,7 +402,7 @@ export default function DashboardPage() {
                       </div>
                       <div>
                         <CardTitle className="text-lg">Total ROI</CardTitle>
-                        <p className="text-sm text-gray-500">Your returns</p>
+                        <p className="text-sm text-gray-500">Your profits</p>
                       </div>
                     </div>
                   </div>
