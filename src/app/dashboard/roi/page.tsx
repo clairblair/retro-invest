@@ -348,11 +348,11 @@ export default function RoiPage() {
                   <GiftIcon className="h-12 w-12 text-yellow-400 drop-shadow-lg" />
                 </div>
                 <CardHeader className="border-b bg-gradient-to-r from-[#ff5858]/20 via-[#ff7e5f]/20 to-[#ff9966]/20">
-                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-4">
                     <div className="rounded-full bg-gradient-to-r from-green-400 to-blue-500 p-2 text-white shadow-lg">
                       <SparklesIcon className="h-7 w-7 animate-spin-slow" />
-                    </div>
-                    <div>
+                      </div>
+                      <div>
                       <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
                         BONUS
                         <TooltipProvider>

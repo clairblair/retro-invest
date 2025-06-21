@@ -9,33 +9,6 @@ import Link from 'next/link'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
 
-const team = [
-  {
-    name: 'John Smith',
-    role: 'CEO & Founder',
-    image: '/team/john-smith.jpg',
-    bio: 'With over 15 years of experience in finance and technology, John leads our vision for the future of investment.',
-  },
-  {
-    name: 'Sarah Johnson',
-    role: 'Chief Investment Officer',
-    image: '/team/sarah-johnson.jpg',
-    bio: 'Sarah brings 12 years of investment expertise and a proven track record of successful portfolio management.',
-  },
-  {
-    name: 'Michael Chen',
-    role: 'Head of Technology',
-    image: '/team/michael-chen.jpg',
-    bio: 'Michael ensures our platform remains at the cutting edge of financial technology and security.',
-  },
-  {
-    name: 'Emily Davis',
-    role: 'Customer Success Lead',
-    image: '/team/emily-davis.jpg',
-    bio: 'Emily is dedicated to ensuring our investors receive exceptional support and guidance.',
-  },
-]
-
 const values = [
   {
     name: 'Innovation',
@@ -112,28 +85,6 @@ export default function AboutPage() {
                   <value.icon className="h-12 w-12 mx-auto text-[#ff5858]" />
                   <h3 className="mt-4 text-xl font-semibold text-gray-900 dark:text-white">{value.name}</h3>
                   <p className="mt-2 text-gray-600 dark:text-gray-300">{value.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Team Section */}
-      <section className="py-20 bg-gray-50 dark:bg-gray-800">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Our Team</h2>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
-              Meet the dedicated professionals behind KLTMINES.
-            </p>
-            <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-              {team.map((member) => (
-                <div key={member.name} className="p-6 bg-white dark:bg-gray-900 rounded-lg shadow-sm">
-                  <Image src={member.image} alt={member.name} width={128} height={128} className="w-32 h-32 mx-auto rounded-full" />
-                  <h3 className="mt-4 text-xl font-semibold text-gray-900 dark:text-white">{member.name}</h3>
-                  <p className="mt-2 text-gray-600 dark:text-gray-300">{member.role}</p>
-                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{member.bio}</p>
                 </div>
               ))}
             </div>

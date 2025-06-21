@@ -15,7 +15,15 @@ import {
   UserGroupIcon,
   SparklesIcon,
   BuildingOfficeIcon,
+  SunIcon,
+  CalendarDaysIcon,
+  GiftIcon,
 } from '@heroicons/react/24/outline'
+import { Slider } from "@/components/ui/slider"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { useState, useEffect } from 'react'
+import { AnimatePresence, animate, useMotionValue, useTransform } from 'framer-motion'
 
 const features = [
   {
@@ -48,6 +56,14 @@ const features = [
     description: 'Custom investment solutions for businesses, organizations, and high-net-worth individuals.',
     icon: BuildingOfficeIcon,
   },
+]
+
+const investmentPlans = [
+  { name: 'Cadet', min: 5, max: 20, dailyROI: 0.05, welcomeBonus: 2.5 },
+  { name: 'Captain', min: 21, max: 35, dailyROI: 0.058, welcomeBonus: 3 },
+  { name: 'General', min: 36, max: 50, dailyROI: 0.0625, welcomeBonus: 3.5 },
+  { name: 'Vanguard', min: 51, max: 99, dailyROI: 0.067, welcomeBonus: 4 },
+  { name: 'Admiral', min: 100, max: 150, dailyROI: 0.071, welcomeBonus: 5 },
 ]
 
 const howItWorks = [
@@ -114,6 +130,168 @@ const faqs = [
 ]
 
 export default function LandingPageContent() {
+  const AnimatedCounter = ({ value, precision = 0 }: { value: number; precision?: number }) => {
+    const count = useMotionValue(0)
+    const rounded = useTransform(count, (latest) => latest.toFixed(precision))
+
+    useEffect(() => {
+      const controls = animate(count, value, { duration: 0.8, ease: "easeOut" })
+      return controls.stop
+    }, [value])
+
+    return <motion.span>{rounded}</motion.span>
+  }
+
+  const InvestmentCalculator = () => {
+    const [amount, setAmount] = useState(50)
+
+    const handleAmountChange = (value: string) => {
+      const numValue = Number(value)
+      if (!isNaN(numValue)) {
+        setAmount(Math.max(5, Math.min(150, numValue)))
+      }
+    }
+
+    const handleSliderChange = (value: number[]) => {
+      setAmount(value[0])
+    }
+
+    const plan = investmentPlans.find(p => amount >= p.min && amount <= p.max)
+
+    const dailyReturn = plan ? amount * plan.dailyROI : 0
+    const hourlyReturn = dailyReturn / 24
+    const monthlyReturn = dailyReturn * 30
+    const welcomeBonus = plan ? plan.welcomeBonus : 0
+
+    return (
+      <Card className="relative overflow-hidden rounded-3xl border-2 border-white/20 bg-gray-900/50 p-2 shadow-2xl backdrop-blur-xl">
+        <div className="absolute -inset-4 z-0 animate-gradient-move-slow bg-gradient-to-br from-purple-600/20 via-orange-500/20 to-red-600/20 blur-2xl" />
+        <style jsx global>{`
+          @keyframes gradient-move-slow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+          }
+          .animate-gradient-move-slow {
+            background-size: 200% 200%;
+            animation: gradient-move-slow 15s ease-in-out infinite;
+          }
+        `}</style>
+        <div className="relative z-10 grid grid-cols-1 gap-8 rounded-2xl bg-white/60 p-8 shadow-inner backdrop-blur-md dark:bg-gray-900/60 md:grid-cols-2">
+          {/* Left side: Inputs */}
+          <motion.div 
+            key="calculator-input"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex flex-col justify-center space-y-8"
+          >
+            <div className="space-y-2">
+              <h3 className="text-3xl font-bold text-gray-900 dark:text-white">Estimate Your Profit</h3>
+              <p className="text-gray-600 dark:text-gray-300">Enter an amount to see your potential returns.</p>
+            </div>
+            
+            <div>
+              <Label htmlFor="investment-amount" className="text-sm font-medium text-gray-700 dark:text-gray-300">Investment Amount ($)</Label>
+              <div className="relative mt-2">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-2xl font-semibold text-[#ff5858]">$</span>
+                <Input
+                  id="investment-amount"
+                  type="number"
+                  value={amount}
+                  onChange={(e) => handleAmountChange(e.target.value)}
+                  className="w-full rounded-full border-2 border-gray-200 bg-white py-3 pl-10 pr-4 text-2xl font-bold text-gray-900 focus:border-[#ff7e5f] focus:ring-[#ff7e5f] dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  min="5"
+                  max="150"
+                />
+              </div>
+            </div>
+            
+            <Slider
+              value={[amount]}
+              onValueChange={handleSliderChange}
+              min={5}
+              max={150}
+              step={1}
+            />
+            
+            <div className="flex items-center justify-between rounded-full bg-gray-100 p-3 dark:bg-gray-800">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Selected Plan:</span>
+              <div className="font-bold text-[#ff5858]">
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={plan ? plan.name : 'N/A'}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {plan ? plan.name : 'N/A'}
+                  </motion.span>
+                </AnimatePresence>
+              </div>
+            </div>
+          </motion.div>
+          
+          {/* Right side: Results */}
+          <motion.div
+            key="calculator-output"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="rounded-2xl bg-gradient-to-br from-[#ff5858] to-[#ff9966] p-8 text-white shadow-lg"
+          >
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <ClockIcon className="h-6 w-6 opacity-80" />
+                  <span className="font-medium">Hourly Return</span>
+                </div>
+                <span className="text-2xl font-bold">
+                  $<AnimatedCounter value={hourlyReturn} precision={5} />
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <SunIcon className="h-6 w-6 opacity-80" />
+                  <span className="font-medium">Daily Return</span>
+                </div>
+                <span className="text-2xl font-bold">
+                  $<AnimatedCounter value={dailyReturn} precision={2} />
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <CalendarDaysIcon className="h-6 w-6 opacity-80" />
+                  <span className="font-medium">Monthly Return</span>
+                </div>
+                <span className="text-2xl font-bold">
+                  $<AnimatedCounter value={monthlyReturn} precision={2} />
+                </span>
+              </div>
+              <div className="my-4 border-t border-white/20" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <GiftIcon className="h-6 w-6 opacity-80" />
+                  <span className="font-medium">Welcome Bonus</span>
+                </div>
+                <span className="text-2xl font-bold">
+                  $<AnimatedCounter value={welcomeBonus} precision={2} />
+                </span>
+              </div>
+              <Button asChild size="lg" className="w-full bg-white text-[#ff5858] hover:bg-white/90 shadow-md">
+                <Link href="/auth/register">
+                  Start Investing Now
+                  <ArrowRightIcon className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      </Card>
+    )
+  }
+
   return (
     <div className="relative">
       {/* Hero Section */}
@@ -271,8 +449,23 @@ export default function LandingPageContent() {
         </div>
       </section>
 
-      {/* How It Works Section */}
+      {/* Investment Calculator Section */}
       <section className="bg-white dark:bg-gray-900 py-16">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              Investment <span className="bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] bg-clip-text text-transparent">Calculator</span>
+            </h2>
+            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
+              Estimate your potential returns in real-time.
+            </p>
+          </div>
+          <InvestmentCalculator />
+        </div>
+      </section>
+      
+      {/* How It Works Section */}
+      <section className="bg-gray-50 dark:bg-gray-800 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">

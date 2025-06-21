@@ -470,7 +470,7 @@ export default function DashboardLayout({
                   </div>
                   <div className="p-2">
                     <DropdownMenuItem className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
-                      <Link href="/dashboard/profile" className="flex items-center space-x-2 w-full">
+                      <Link href="/dashboard/settings" className="flex items-center space-x-2 w-full">
                         <UserIcon className="h-4 w-4" />
                         <span>Profile</span>
                       </Link>

@@ -13,12 +13,15 @@ import {
   ArrowLeftIcon,
   ArrowRightIcon,
   MagnifyingGlassIcon,
+  CreditCardIcon,
+  ExclamationTriangleIcon,
+  InformationCircleIcon,
 } from '@heroicons/react/24/outline'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
@@ -53,56 +56,19 @@ const poppins = Poppins({
 
 interface Transaction {
   id: number
-  type: 'deposit' | 'withdrawal' | 'transfer'
-  amount: string
+  type: 'deposit' | 'withdrawal' | 'transfer-in' | 'transfer-out' | 'investment'
+  amount: number
   date: string
-  status: 'completed' | 'pending' | 'failed'
-  currency: 'NGN' | 'USD' | 'BTC' | 'ETH'
-  method?: string
-  reference?: string
+  status: 'Completed' | 'Pending' | 'Failed'
+  description: string
 }
 
 const recentTransactions: Transaction[] = [
-  {
-    id: 1,
-    type: 'deposit',
-    amount: '₦500,000',
-    date: '2024-03-20',
-    status: 'completed',
-    currency: 'NGN',
-    method: 'Bank Transfer',
-    reference: 'TRX123456',
-  },
-  {
-    id: 2,
-    type: 'withdrawal',
-    amount: '₦300,000',
-    date: '2024-03-19',
-    status: 'completed',
-    currency: 'NGN',
-    method: 'Bank Transfer',
-    reference: 'TRX123457',
-  },
-  {
-    id: 3,
-    type: 'transfer',
-    amount: '0.05 BTC',
-    date: '2024-03-18',
-    status: 'completed',
-    currency: 'BTC',
-    method: 'Crypto Transfer',
-    reference: 'TRX123458',
-  },
-  {
-    id: 4,
-    type: 'deposit',
-    amount: '$2,500',
-    date: '2024-03-17',
-    status: 'pending',
-    currency: 'USD',
-    method: 'Card Payment',
-    reference: 'TRX123459',
-  },
+  { id: 1, type: 'deposit', amount: 500, date: '2024-07-21', status: 'Completed', description: 'Bank Deposit' },
+  { id: 2, type: 'investment', amount: -450, date: '2024-07-20', status: 'Completed', description: 'Vanguard Plan' },
+  { id: 3, type: 'transfer-in', amount: 120, date: '2024-07-19', status: 'Completed', description: 'From Profit Wallet' },
+  { id: 4, type: 'withdrawal', amount: -200, date: '2024-07-18', status: 'Completed', description: 'To Bank Account' },
+  { id: 5, type: 'transfer-out', amount: -120, date: '2024-07-19', status: 'Completed', description: 'To Main Wallet' },
 ]
 
 interface WalletBalance {
@@ -248,6 +214,13 @@ export default function WalletPage() {
   const [transactionSort, setTransactionSort] = useState('date')
   const [searchQuery, setSearchQuery] = useState('')
 
+  const [mainBalance, setMainBalance] = useState({ available: 1000, pending: 150, locked: 100 })
+  const [profitBalance, setProfitBalance] = useState(850.75)
+
+  const [transferAmount, setTransferAmount] = useState('')
+  const [withdrawAmount, setWithdrawAmount] = useState('')
+  const [depositAmount, setDepositAmount] = useState('')
+
   // Calculate pagination
   const indexOfLastTransaction = currentPage * itemsPerPage
   const indexOfFirstTransaction = indexOfLastTransaction - itemsPerPage
@@ -265,9 +238,8 @@ export default function WalletPage() {
       const searchLower = searchQuery.toLowerCase()
       return (
         transaction.type.toLowerCase().includes(searchLower) ||
-        transaction.amount.toLowerCase().includes(searchLower) ||
-        transaction.reference?.toLowerCase().includes(searchLower) ||
-        transaction.method?.toLowerCase().includes(searchLower)
+        transaction.amount.toString().includes(searchLower) ||
+        transaction.description.toLowerCase().includes(searchLower)
       )
     })
     .sort((a, b) => {
@@ -275,7 +247,7 @@ export default function WalletPage() {
         return new Date(b.date).getTime() - new Date(a.date).getTime()
       }
       if (transactionSort === 'amount') {
-        return parseFloat(b.amount.replace(/[^0-9.-]+/g, '')) - parseFloat(a.amount.replace(/[^0-9.-]+/g, ''))
+        return b.amount - a.amount
       }
       return 0
     })
@@ -289,27 +261,24 @@ export default function WalletPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed':
+      case 'Completed':
         return 'bg-green-100 text-green-800'
-      case 'pending':
+      case 'Pending':
         return 'bg-yellow-100 text-yellow-800'
-      case 'failed':
+      case 'Failed':
         return 'bg-red-100 text-red-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }
   }
 
-  const getTransactionIcon = (type: string) => {
-    switch (type) {
-      case 'deposit':
-        return <ArrowDownIcon className="h-4 w-4 text-green-500" />
-      case 'withdrawal':
-        return <ArrowUpIcon className="h-4 w-4 text-red-500" />
-      case 'transfer':
-        return <ArrowPathIcon className="h-4 w-4 text-blue-500" />
-      default:
-        return null
+  const getTransactionIcon = (type: Transaction['type']) => {
+    switch(type) {
+      case 'deposit': return <ArrowDownIcon className="h-5 w-5 text-green-500" />
+      case 'withdrawal': return <ArrowUpIcon className="h-5 w-5 text-red-500" />
+      case 'transfer-in': return <ArrowRightIcon className="h-5 w-5 text-blue-500" />
+      case 'transfer-out': return <ArrowLeftIcon className="h-5 w-5 text-orange-500" />
+      case 'investment': return <BanknotesIcon className="h-5 w-5 text-purple-500" />
     }
   }
 
@@ -488,6 +457,18 @@ export default function WalletPage() {
     setCurrentPage(page)
   }
 
+  const handleTransfer = () => {
+    const amount = parseFloat(transferAmount)
+    if (isNaN(amount) || amount <= 0 || amount > profitBalance) {
+      toast.error("Invalid Transfer Amount", { description: "Please enter a valid amount to transfer." })
+      return
+    }
+    setProfitBalance(prev => prev - amount)
+    setMainBalance(prev => ({ ...prev, available: prev.available + amount }))
+    toast.success("Transfer Successful", { description: `$${amount.toFixed(2)} has been transferred to your Main Wallet.` })
+    setTransferAmount('')
+  }
+
   return (
     <div className={`space-y-8 ${poppins.variable} font-sans max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8`}>
       <motion.div
@@ -498,7 +479,7 @@ export default function WalletPage() {
       >
         <div>
           <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] bg-clip-text text-transparent tracking-tight">
-            Wallet
+            My Wallets
           </h1>
           <p className="text-base sm:text-lg text-gray-500 mt-1">Manage your funds and transactions</p>
         </div>
@@ -1083,18 +1064,17 @@ export default function WalletPage() {
                         {getTransactionIcon(transaction.type)}
                       </div>
                       <div>
-                        <p className="font-semibold capitalize">{transaction.type}</p>
+                        <p className="font-semibold capitalize">{transaction.description}</p>
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="text-sm text-gray-500">{transaction.date}</p>
-                          <span className="text-sm text-gray-500 hidden sm:inline">•</span>
-                          <p className="text-sm text-gray-500">{transaction.method}</p>
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center justify-between sm:justify-end gap-4">
                       <div className="text-right">
-                        <p className="font-semibold">{transaction.amount}</p>
-                        <p className="text-sm text-gray-500">{transaction.reference}</p>
+                        <p className={cn("font-bold", transaction.amount > 0 ? 'text-green-500' : 'text-red-500')}>
+                          {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
+                        </p>
                       </div>
                       <span
                         className={cn(
@@ -1199,7 +1179,9 @@ export default function WalletPage() {
                     <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="deposit">Deposits</SelectItem>
                     <SelectItem value="withdrawal">Withdrawals</SelectItem>
-                    <SelectItem value="transfer">Transfers</SelectItem>
+                    <SelectItem value="transfer-in">Transfers In</SelectItem>
+                    <SelectItem value="transfer-out">Transfers Out</SelectItem>
+                    <SelectItem value="investment">Investments</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={transactionSort} onValueChange={setTransactionSort}>
@@ -1230,18 +1212,17 @@ export default function WalletPage() {
                         {getTransactionIcon(transaction.type)}
                       </div>
                       <div>
-                        <p className="font-semibold capitalize">{transaction.type}</p>
+                        <p className="font-semibold capitalize">{transaction.description}</p>
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="text-sm text-gray-500">{transaction.date}</p>
-                          <span className="text-sm text-gray-500 hidden sm:inline">•</span>
-                          <p className="text-sm text-gray-500">{transaction.method}</p>
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center justify-between sm:justify-end gap-4">
                       <div className="text-right">
-                        <p className="font-semibold">{transaction.amount}</p>
-                        <p className="text-sm text-gray-500">{transaction.reference}</p>
+                        <p className={cn("font-bold", transaction.amount > 0 ? 'text-green-500' : 'text-red-500')}>
+                          {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
+                        </p>
                       </div>
                       <span
                         className={cn(
@@ -1274,5 +1255,39 @@ export default function WalletPage() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+function WalletCard({ title, description, balance, details, actions, icon, color }: any) {
+  const gradientColor = color === 'orange' 
+    ? 'from-[#ff5858] to-[#ff9966]' 
+    : 'from-purple-500 to-indigo-600'
+
+  return (
+    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}>
+      <Card className={cn("relative overflow-hidden text-white border-none shadow-2xl", `bg-gradient-to-br ${gradientColor}`)}>
+        <div className="absolute top-0 right-0 h-24 w-24 text-white/10">{icon}</div>
+        <CardHeader>
+          <CardTitle className="text-2xl">{title}</CardTitle>
+          <p className="text-sm opacity-80">{description}</p>
+        </CardHeader>
+        <CardContent>
+          <p className="text-5xl font-bold mb-4">${balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          {details.length > 0 && (
+            <div className="space-y-2 border-t border-white/20 pt-4">
+              {details.map((item: any) => (
+                <div key={item.label} className="flex justify-between text-lg">
+                  <span className="opacity-80">{item.label}</span>
+                  <span>${item.value.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex space-x-4 mt-6">
+            {actions}
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   )
 } 

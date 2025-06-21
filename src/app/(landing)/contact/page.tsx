@@ -22,7 +22,7 @@ export default function ContactPage() {
       </section>
       <section className="text-center pb-16">
         <Button asChild size="lg" className="bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] text-white hover:opacity-90">
-          <Link href="/dashboard">Get Started</Link>
+          <Link href="/auth/register">Get Started</Link>
         </Button>
       </section>
     </div>
