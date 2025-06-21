@@ -220,7 +220,7 @@ export default function WithdrawalsPage() {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Minimum Withdrawal</span>
-                      <span className="font-medium">₦10,000</span>
+                      <span className="font-medium">₦2,000</span>
                     </div>
                   </div>
                 </CardContent>
@@ -255,7 +255,7 @@ export default function WithdrawalsPage() {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Processing Time</span>
-                      <span className="font-medium">24-48 hours</span>
+                      <span className="font-medium">0-24hrs</span>
                     </div>
                   </div>
                 </CardContent>
@@ -323,18 +323,19 @@ export default function WithdrawalsPage() {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-500">Bank Transfer</span>
-                          <span className="font-medium">₦10,000 - ₦1M</span>
+                          <span className="font-medium">₦2,000 - ₦1M</span>
                         </div>
                         <Progress value={75} className="h-2" />
-                      </div>
-                      <div className="mt-4 space-y-2">
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between text-sm mt-2">
                           <span className="text-gray-500">Crypto</span>
-                          <span className="font-medium">$100 - $10K</span>
+                          <span className="font-medium">$10 - $10k</span>
                         </div>
                         <Progress value={25} className="h-2" />
                       </div>
                     </div>
+                    <p className="mt-2 text-xs text-gray-500">
+                      Minimum withdrawal: {activeTab === 'naira' ? '₦2,000' : '$10'}
+                    </p>
                   </div>
                 </CardContent>
               </Card>

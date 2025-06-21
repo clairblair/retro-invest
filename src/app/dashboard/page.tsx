@@ -70,14 +70,14 @@ const recentTransactions: Transaction[] = [
 const stats = [
   {
     name: 'Total Balance',
-    value: '$24,500.00',
+    value: '24,500.00 USDT',
     change: '+12.5%',
     changeType: 'increase',
     description: 'Your total investment balance',
   },
   {
     name: 'Daily ROI',
-    value: '$245.00',
+    value: '245.00 USDT',
     change: '+2.5%',
     changeType: 'increase',
     description: 'Today&apos;s return on investment',
@@ -230,10 +230,6 @@ export default function DashboardPage() {
                       <p className="text-2xl font-bold">₦1,250,000</p>
                       <p className="text-sm text-gray-500">Available for investment</p>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Monthly Growth</span>
-                      <span className="text-green-600">+12.5%</span>
-                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -255,10 +251,6 @@ export default function DashboardPage() {
                     <div className="rounded-lg bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-4">
                       <p className="text-2xl font-bold">₦45,000</p>
                       <p className="text-sm text-gray-500">Total earnings</p>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Daily Growth</span>
-                      <span className="text-green-600">+1.5%</span>
                     </div>
                   </div>
                 </CardContent>
@@ -378,10 +370,6 @@ export default function DashboardPage() {
                       <p className="text-2xl font-bold">₦1,250,000</p>
                       <p className="text-sm text-gray-500">Available for investment</p>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Monthly Growth</span>
-                      <span className="text-green-600">+12.5%</span>
-                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -412,10 +400,6 @@ export default function DashboardPage() {
                     <div className="rounded-lg bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-4">
                       <p className="text-2xl font-bold">₦45,000</p>
                       <p className="text-sm text-gray-500">Total earnings</p>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Daily Growth</span>
-                      <span className="text-green-600">+1.5%</span>
                     </div>
                   </div>
                 </CardContent>

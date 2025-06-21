@@ -58,13 +58,21 @@ const features = [
   },
 ]
 
-const investmentPlans = [
-  { name: 'Cadet', min: 5, max: 20, dailyROI: 0.05, welcomeBonus: 2.5 },
-  { name: 'Captain', min: 21, max: 35, dailyROI: 0.058, welcomeBonus: 3 },
-  { name: 'General', min: 36, max: 50, dailyROI: 0.0625, welcomeBonus: 3.5 },
-  { name: 'Vanguard', min: 51, max: 99, dailyROI: 0.067, welcomeBonus: 4 },
-  { name: 'Admiral', min: 100, max: 150, dailyROI: 0.071, welcomeBonus: 5 },
-]
+const usdtInvestmentPlans = [
+  { name: 'Cadet', min: 5, max: 20, dailyROI: 5, welcomeBonus: 2.5 },
+  { name: 'Captain', min: 21, max: 35, dailyROI: 5.8, welcomeBonus: 3 },
+  { name: 'General', min: 36, max: 50, dailyROI: 6.25, welcomeBonus: 3.5 },
+  { name: 'Vanguard', min: 51, max: 99, dailyROI: 6.7, welcomeBonus: 4 },
+  { name: 'Admiral', min: 100, max: 150, dailyROI: 7.1, welcomeBonus: 4.5 },
+];
+
+const nairaInvestmentPlans = [
+  { name: 'Cadet', min: 5000, max: 25000, dailyROI: 5, welcomeBonus: 2.5 },
+  { name: 'Captain', min: 26000, max: 35000, dailyROI: 5.8, welcomeBonus: 3 },
+  { name: 'General', min: 36000, max: 45000, dailyROI: 6.25, welcomeBonus: 3.5 },
+  { name: 'Vanguard', min: 46000, max: 55000, dailyROI: 6.7, welcomeBonus: 4 },
+  { name: 'Admiral', min: 156000, max: 250000, dailyROI: 7.1, welcomeBonus: 4.5 },
+];
 
 const howItWorks = [
   {
@@ -143,25 +151,52 @@ export default function LandingPageContent() {
   }
 
   const InvestmentCalculator = () => {
-    const [amount, setAmount] = useState(50)
+    const [currency, setCurrency] = useState<'usdt' | 'naira'>('usdt');
+    const investmentPlans = currency === 'usdt' ? usdtInvestmentPlans : nairaInvestmentPlans;
+    const minAmount = investmentPlans[0].min;
+    const maxAmount = investmentPlans[investmentPlans.length - 1].max;
+
+    const [amount, setAmount] = useState(currency === 'usdt' ? 50 : 50000);
+
+    useEffect(() => {
+      setAmount(currency === 'usdt' ? usdtInvestmentPlans[2].min : nairaInvestmentPlans[2].min);
+    }, [currency]);
 
     const handleAmountChange = (value: string) => {
-      const numValue = Number(value)
-      if (!isNaN(numValue)) {
-        setAmount(Math.max(5, Math.min(150, numValue)))
+      if (value === '') {
+        setAmount(0);
+        return;
       }
-    }
+      const numValue = Number(value.replace(/,/g, ''));
+      if (!isNaN(numValue)) {
+        setAmount(numValue);
+      }
+    };
+
+    const handleBlur = () => {
+      if (amount === 0) return;
+
+      const selectedPlan = [...investmentPlans].reverse().find(p => amount >= p.min);
+
+      if (!selectedPlan) {
+        setAmount(minAmount);
+      } else if (amount > selectedPlan.max) {
+        setAmount(selectedPlan.max);
+      } else if (amount < minAmount) {
+        setAmount(minAmount);
+      }
+    };
 
     const handleSliderChange = (value: number[]) => {
-      setAmount(value[0])
-    }
+      setAmount(value[0]);
+    };
 
-    const plan = investmentPlans.find(p => amount >= p.min && amount <= p.max)
+    const plan = [...investmentPlans].reverse().find(p => amount >= p.min);
 
-    const dailyReturn = plan ? amount * plan.dailyROI : 0
-    const hourlyReturn = dailyReturn / 24
-    const monthlyReturn = dailyReturn * 30
-    const welcomeBonus = plan ? plan.welcomeBonus : 0
+    const dailyReturn = plan ? amount * (plan.dailyROI / 100) : 0;
+    const hourlyReturn = dailyReturn / 24;
+    const monthlyReturn = dailyReturn * 30;
+    const welcomeBonusValue = plan ? amount * (plan.welcomeBonus / 100) : 0;
 
     return (
       <Card className="relative overflow-hidden rounded-3xl border-2 border-white/20 bg-gray-900/50 p-2 shadow-2xl backdrop-blur-xl">
@@ -191,18 +226,38 @@ export default function LandingPageContent() {
               <p className="text-gray-600 dark:text-gray-300">Enter an amount to see your potential returns.</p>
             </div>
             
+            <div className="flex justify-center">
+              <div className="flex space-x-1 rounded-full bg-gray-200 dark:bg-gray-700 p-1">
+                <button
+                  onClick={() => setCurrency('usdt')}
+                  className={`relative px-4 py-2 text-sm font-semibold text-gray-800 dark:text-white transition-colors duration-300`}
+                >
+                  {currency === 'usdt' && <motion.span layoutId="calculator-currency-bg" className="absolute inset-0 rounded-full bg-white dark:bg-gray-900 shadow" />}
+                  <span className="relative z-10">USDT</span>
+                </button>
+                <button
+                  onClick={() => setCurrency('naira')}
+                  className={`relative px-4 py-2 text-sm font-semibold text-gray-800 dark:text-white transition-colors duration-300`}
+                >
+                  {currency === 'naira' && <motion.span layoutId="calculator-currency-bg" className="absolute inset-0 rounded-full bg-white dark:bg-gray-900 shadow" />}
+                  <span className="relative z-10">Naira</span>
+                </button>
+              </div>
+            </div>
+            
             <div>
-              <Label htmlFor="investment-amount" className="text-sm font-medium text-gray-700 dark:text-gray-300">Investment Amount ($)</Label>
+              <Label htmlFor="investment-amount" className="text-sm font-medium text-gray-700 dark:text-gray-300">Investment Amount ({currency === 'usdt' ? 'USDT' : 'NGN'})</Label>
               <div className="relative mt-2">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-2xl font-semibold text-[#ff5858]">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-2xl font-semibold text-[#ff5858]">{currency === 'usdt' ? '$' : '₦'}</span>
                 <Input
                   id="investment-amount"
-                  type="number"
-                  value={amount}
+                  type="text"
+                  value={amount === 0 ? '' : amount.toLocaleString()}
                   onChange={(e) => handleAmountChange(e.target.value)}
+                  onBlur={handleBlur}
                   className="w-full rounded-full border-2 border-gray-200 bg-white py-3 pl-10 pr-4 text-2xl font-bold text-gray-900 focus:border-[#ff7e5f] focus:ring-[#ff7e5f] dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                  min="5"
-                  max="150"
+                  min={minAmount}
+                  max={maxAmount}
                 />
               </div>
             </div>
@@ -210,9 +265,9 @@ export default function LandingPageContent() {
             <Slider
               value={[amount]}
               onValueChange={handleSliderChange}
-              min={5}
-              max={150}
-              step={1}
+              min={minAmount}
+              max={maxAmount}
+              step={currency === 'usdt' ? 1 : 1000}
             />
             
             <div className="flex items-center justify-between rounded-full bg-gray-100 p-3 dark:bg-gray-800">
@@ -248,7 +303,7 @@ export default function LandingPageContent() {
                   <span className="font-medium">Hourly Return</span>
                 </div>
                 <span className="text-2xl font-bold">
-                  $<AnimatedCounter value={hourlyReturn} precision={5} />
+                  {currency === 'usdt' ? '$' : '₦'}<AnimatedCounter value={hourlyReturn} precision={currency === 'usdt' ? 5 : 2} />
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -257,7 +312,7 @@ export default function LandingPageContent() {
                   <span className="font-medium">Daily Return</span>
                 </div>
                 <span className="text-2xl font-bold">
-                  $<AnimatedCounter value={dailyReturn} precision={2} />
+                  {currency === 'usdt' ? '$' : '₦'}<AnimatedCounter value={dailyReturn} precision={2} />
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -266,7 +321,7 @@ export default function LandingPageContent() {
                   <span className="font-medium">Monthly Return</span>
                 </div>
                 <span className="text-2xl font-bold">
-                  $<AnimatedCounter value={monthlyReturn} precision={2} />
+                  {currency === 'usdt' ? '$' : '₦'}<AnimatedCounter value={monthlyReturn} precision={2} />
                 </span>
               </div>
               <div className="my-4 border-t border-white/20" />
@@ -276,7 +331,7 @@ export default function LandingPageContent() {
                   <span className="font-medium">Welcome Bonus</span>
                 </div>
                 <span className="text-2xl font-bold">
-                  $<AnimatedCounter value={welcomeBonus} precision={2} />
+                  {currency === 'usdt' ? '$' : '₦'}<AnimatedCounter value={welcomeBonusValue} precision={2} />
                 </span>
               </div>
               <Button asChild size="lg" className="w-full bg-white text-[#ff5858] hover:bg-white/90 shadow-md">

@@ -73,7 +73,6 @@ interface InvestmentPlan {
   icon: any
   features: string[]
   description: string
-  riskLevel: 'Low' | 'Medium' | 'High'
   popularity: number
   totalInvestors: number
   totalVolume: string
@@ -149,7 +148,6 @@ const investmentPlans: InvestmentPlan[] = [
     icon: <StarIcon className="h-6 w-6" />,
     features: [ 'Daily ROI payments', 'Flexible investment duration', '2.5% welcome bonus', '3.5% referral bonus', 'Auto-reinvest option', '24/7 Support' ],
     description: "Start your investment journey with the Cadet plan, designed for steady growth and minimal risk.",
-    riskLevel: "Low",
     popularity: 92,
     totalInvestors: 1500,
     totalVolume: "₦15M",
@@ -168,7 +166,6 @@ const investmentPlans: InvestmentPlan[] = [
     icon: <RocketLaunchIcon className="h-6 w-6" />,
     features: [ 'Daily ROI payments', 'Flexible investment duration', '3% welcome bonus', '4% referral bonus', 'Priority Support', 'Auto-reinvest option' ],
     description: "The Captain plan offers enhanced returns and priority support for the ambitious investor.",
-    riskLevel: "Low",
     popularity: 88,
     totalInvestors: 1100,
     totalVolume: "₦30M",
@@ -187,7 +184,6 @@ const investmentPlans: InvestmentPlan[] = [
     icon: <ShieldCheckIcon className="h-6 w-6" />,
     features: [ 'High Daily ROI payments', 'Flexible terms', '3.5% welcome bonus', '4.5% referral bonus', 'Priority Support', 'Auto-reinvest option' ],
     description: "For the strategic investor, the General plan provides high daily ROIs and flexible terms.",
-    riskLevel: "Medium",
     popularity: 85,
     totalInvestors: 800,
     totalVolume: "₦50M",
@@ -206,7 +202,6 @@ const investmentPlans: InvestmentPlan[] = [
     icon: <FireIcon className="h-6 w-6" />,
     features: [ 'Higher Daily ROI payments', 'Flexible investment duration', '4% welcome bonus', '5% referral bonus', 'Auto-invest option', 'VIP benefit' ],
     description: "Lead the charge with the Vanguard plan, offering even higher returns and exclusive VIP benefits.",
-    riskLevel: "Medium",
     popularity: 80,
     totalInvestors: 600,
     totalVolume: "₦75M",
@@ -225,7 +220,6 @@ const investmentPlans: InvestmentPlan[] = [
     icon: <TrophyIcon className="h-6 w-6" />,
     features: [ 'Highest Daily ROI payments', 'Flexible investment duration', '5% welcome bonus', '6% referral bonus', 'Auto-invest option', 'VIP benefit' ],
     description: "The Admiral plan is for the elite investor, providing the highest returns and premium benefits.",
-    riskLevel: "High",
     popularity: 75,
     totalInvestors: 400,
     totalVolume: "₦120M",
@@ -245,7 +239,6 @@ const investmentPlans: InvestmentPlan[] = [
     icon: <StarIcon className="h-6 w-6" />,
     features: [ 'Daily ROI payments', 'Flexible investment duration', '2.5% welcome bonus', '3.5% referral bonus', 'Auto-reinvest option', '24/7 Support' ],
     description: "A stable and secure start to crypto investing with our USDT Cadet plan.",
-    riskLevel: "Low",
     popularity: 90,
     totalInvestors: 2500,
     totalVolume: "$500k",
@@ -264,7 +257,6 @@ const investmentPlans: InvestmentPlan[] = [
     icon: <RocketLaunchIcon className="h-6 w-6" />,
     features: [ 'Daily ROI payments', 'Flexible investment duration', '3% welcome bonus', '4% referral bonus', 'Priority Support', 'Auto-reinvest option' ],
     description: "Navigate the crypto markets with confidence using the USDT Captain plan.",
-    riskLevel: "Low",
     popularity: 87,
     totalInvestors: 1800,
     totalVolume: "$800k",
@@ -283,7 +275,6 @@ const investmentPlans: InvestmentPlan[] = [
     icon: <ShieldCheckIcon className="h-6 w-6" />,
     features: [ 'High Daily ROI payments', 'Flexible terms', '3.5% welcome bonus', '4.5% referral bonus', 'Priority Support', 'Auto-reinvest option' ],
     description: "Command a powerful investment strategy with the high-yield USDT General plan.",
-    riskLevel: "Medium",
     popularity: 84,
     totalInvestors: 1200,
     totalVolume: "$1.2M",
@@ -302,7 +293,6 @@ const investmentPlans: InvestmentPlan[] = [
     icon: <FireIcon className="h-6 w-6" />,
     features: [ 'Higher Daily ROI payments', 'Flexible investment duration', '4% welcome bonus', '5% referral bonus', 'Auto-invest option', 'VIP benefit' ],
     description: "Pioneer new opportunities in the crypto space with the USDT Vanguard plan.",
-    riskLevel: "Medium",
     popularity: 78,
     totalInvestors: 900,
     totalVolume: "$2M",
@@ -321,7 +311,6 @@ const investmentPlans: InvestmentPlan[] = [
     icon: <TrophyIcon className="h-6 w-6" />,
     features: [ 'Highest Daily ROI payments', 'Flexible investment duration', '5% welcome bonus', '6% referral bonus', 'Auto-invest option', 'VIP benefit' ],
     description: "The pinnacle of crypto investing, the USDT Admiral plan offers unparalleled returns.",
-    riskLevel: "High",
     popularity: 72,
     totalInvestors: 500,
     totalVolume: "$3.5M",
@@ -382,11 +371,8 @@ export default function InvestmentsPage() {
   const [activeTab, setActiveTab] = useState('plans')
   const [autoReinvest, setAutoReinvest] = useState(false)
   const [selectedCurrency, setSelectedCurrency] = useState<'naira' | 'usdt'>('naira')
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null)
-  const [showPaymentDetails, setShowPaymentDetails] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [riskFilter, setRiskFilter] = useState('all')
   const [roiFilter, setRoiFilter] = useState('all')
   const [investmentStatusFilter, setInvestmentStatusFilter] = useState<'all' | 'active' | 'completed'>('active')
   const [searchActive, setSearchActive] = useState('')
@@ -399,46 +385,29 @@ export default function InvestmentsPage() {
   }, [])
 
   const handleInvestment = async () => {
-    if (!selectedPlan || !selectedPaymentMethod) return
+    if (!selectedPlan || !investmentAmount) return
 
     setIsProcessing(true)
     try {
-      if (selectedPaymentMethod.type === 'wallet') {
-        console.log('Processing wallet payment:', {
-          plan: selectedPlan,
-          amount: investmentAmount,
-          autoReinvest,
-        })
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        toast.success('Investment Created', {
-          description: 'Your investment has been created successfully.',
-        })
-        setSelectedPlan(null)
-        setInvestmentAmount('')
-        setAutoReinvest(false)
-        setSelectedPaymentMethod(null)
-      } else {
-        setShowPaymentDetails(true)
-      }
+      // All investments are processed from the wallet
+      console.log('Processing investment from wallet:', {
+        plan: selectedPlan.name,
+        amount: investmentAmount,
+        autoReinvest,
+      })
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      toast.success('Investment Successful', {
+        description: `Your investment in ${selectedPlan.name} was successful.`,
+      })
+      setSelectedPlan(null)
+      setInvestmentAmount('')
+      setAutoReinvest(false)
     } catch (error) {
-      toast.error('Error', {
+      toast.error('Investment Failed', {
         description: 'There was an error creating your investment.',
       })
     } finally {
       setIsProcessing(false)
-    }
-  }
-  
-  const getRiskLevelColor = (riskLevel: string) => {
-    switch (riskLevel) {
-      case 'Low':
-        return 'bg-green-100 text-green-800'
-      case 'Medium':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'High':
-        return 'bg-red-100 text-red-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
     }
   }
 
@@ -493,7 +462,7 @@ export default function InvestmentsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="naira">Naira (₦)</SelectItem>
-                  <SelectItem value="usdt">USDT ($)</SelectItem>
+                  <SelectItem value="usdt">USDT</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -517,17 +486,6 @@ export default function InvestmentsPage() {
                  />
                </div>
                <div className="flex flex-wrap gap-2">
-                 <Select value={riskFilter} onValueChange={setRiskFilter}>
-                   <SelectTrigger className="w-[140px] bg-white/50 backdrop-blur-sm">
-                     <SelectValue placeholder="Risk Level" />
-                   </SelectTrigger>
-                   <SelectContent>
-                     <SelectItem value="all">All Risks</SelectItem>
-                     <SelectItem value="Low">Low Risk</SelectItem>
-                     <SelectItem value="Medium">Medium Risk</SelectItem>
-                     <SelectItem value="High">High Risk</SelectItem>
-                   </SelectContent>
-                 </Select>
                  <Select value={roiFilter} onValueChange={setRoiFilter}>
                    <SelectTrigger className="w-[140px] bg-white/50 backdrop-blur-sm">
                      <SelectValue placeholder="ROI Range" />
@@ -543,7 +501,6 @@ export default function InvestmentsPage() {
                    variant="outline"
                    onClick={() => {
                      setSearchQuery('')
-                     setRiskFilter('all')
                      setRoiFilter('all')
                    }}
                    className="bg-white/50 backdrop-blur-sm"
@@ -578,13 +535,12 @@ export default function InvestmentsPage() {
                    const matchesCurrency = plan.type === selectedCurrency;
                    const matchesSearch = plan.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                                         plan.description.toLowerCase().includes(searchQuery.toLowerCase());
-                   const matchesRisk = riskFilter === 'all' || plan.riskLevel === riskFilter;
                    const matchesRoi = roiFilter === 'all' || 
                      (roiFilter === 'low' && plan.dailyRoi >= 5 && plan.dailyRoi < 6) ||
                      (roiFilter === 'medium' && plan.dailyRoi >= 6 && plan.dailyRoi < 7) ||
                      (roiFilter === 'high' && plan.dailyRoi >= 7);
                    
-                   return matchesCurrency && matchesSearch && matchesRisk && matchesRoi;
+                   return matchesCurrency && matchesSearch && matchesRoi;
                 })
                 .map((plan) => (
                   <motion.div
@@ -605,7 +561,6 @@ export default function InvestmentsPage() {
                               <CardDescription>{plan.description}</CardDescription>
                             </div>
                         </div>
-                        <Badge className={cn("capitalize", getRiskLevelColor(plan.riskLevel))}>{plan.riskLevel}</Badge>
                       </CardHeader>
                       <CardContent className="p-6 flex-grow flex flex-col">
                         <div className="space-y-4 flex-grow">
@@ -630,7 +585,7 @@ export default function InvestmentsPage() {
                             <strong>Investment Range:</strong>{' '}
                             {plan.type === 'naira'
                               ? `₦${plan.minAmount.toLocaleString()} - ₦${plan.maxAmount.toLocaleString()}`
-                              : `$${plan.minAmount.toLocaleString()} - $${plan.maxAmount.toLocaleString()} USDT`
+                              : `${plan.minAmount.toLocaleString()} - ${plan.maxAmount.toLocaleString()} USDT`
                             }
                           </div>
                         
@@ -679,7 +634,7 @@ export default function InvestmentsPage() {
                                   {plan.type === 'naira' ? (
                                     <span className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400">₦</span>
                                   ) : (
-                                    <span className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400">$</span>
+                                    <span className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400">USDT</span>
                                   )}
                                   <Input
                                     type="number"
@@ -690,11 +645,13 @@ export default function InvestmentsPage() {
                                   />
                                 </div>
                                 <p className="mt-2 text-xs text-gray-500">
-                                  Min: {plan.type === 'naira' ? '₦' : '$'}
+                                  Min: {plan.type === 'naira' ? '₦' : ''}
                                   {plan.minAmount.toLocaleString()}
+                                  {plan.type === 'usdt' ? ' USDT' : ''}
                                   {' | '}
-                                  Max: {plan.type === 'naira' ? '₦' : '$'}
+                                  Max: {plan.type === 'naira' ? '₦' : ''}
                                   {plan.maxAmount.toLocaleString()}
+                                  {plan.type === 'usdt' ? ' USDT' : ''}
                                 </p>
                               </div>
 
@@ -708,46 +665,6 @@ export default function InvestmentsPage() {
                                 <Label htmlFor="auto-reinvest" className="text-sm cursor-pointer">
                                   Enable Auto-Reinvest
                                 </Label>
-                              </div>
-
-                              <div>
-                                <Label className="text-sm font-medium">Payment Method</Label>
-                                <div className="mt-2 grid gap-3">
-                                  {paymentMethods.map((method) => (
-                                    <motion.div
-                                      key={method.id}
-                                      whileHover={{ scale: 1.02 }}
-                                      whileTap={{ scale: 0.98 }}
-                                      className={`relative flex cursor-pointer rounded-lg border-2 p-4 shadow-sm focus:outline-none transition-all ${
-                                        selectedPaymentMethod?.id === method.id
-                                          ? 'border-blue-500 ring-2 ring-blue-500 bg-blue-50'
-                                          : 'border-gray-300 hover:border-blue-300'
-                                      }`}
-                                      onClick={() => setSelectedPaymentMethod(method)}
-                                    >
-                                      <div className="flex flex-1">
-                                        <div className="flex flex-col">
-                                          <div className="flex items-center gap-2">
-                                            <div className="rounded-full bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] p-2 text-white">
-                                              {method.icon}
-                                            </div>
-                                            <span className="text-sm font-medium">
-                                              {method.name}
-                                            </span>
-                                          </div>
-                                          <p className="mt-1 text-xs text-gray-500">
-                                            {method.description}
-                                          </p>
-                                        </div>
-                                      </div>
-                                      <div className="ml-4 flex items-center">
-                                        {selectedPaymentMethod?.id === method.id && (
-                                          <CheckCircleIcon className="h-5 w-5 text-[#ff5858]" />
-                                        )}
-                                      </div>
-                                    </motion.div>
-                                  ))}
-                                </div>
                               </div>
 
                               <div className="rounded-lg bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-4">
@@ -771,7 +688,7 @@ export default function InvestmentsPage() {
                                     <span className="font-medium text-green-600">
                                       {plan.type === 'naira'
                                         ? '₦' + calculateProjectedEarnings(Number(investmentAmount), plan.dailyRoi, plan.duration).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                                        : '$' + calculateProjectedEarnings(Number(investmentAmount), plan.dailyRoi, plan.duration).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ` ${plan.type.toUpperCase()}`}
+                                        : calculateProjectedEarnings(Number(investmentAmount), plan.dailyRoi, plan.duration).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ` USDT`}
                                     </span>
                                   </div>
                                 </div>
@@ -782,8 +699,6 @@ export default function InvestmentsPage() {
                                 variant="outline"
                                 onClick={() => {
                                   setSelectedPlan(null)
-                                  setSelectedPaymentMethod(null)
-                                  setShowPaymentDetails(false)
                                 }}
                                 className="w-full sm:w-auto h-12 text-base border-2 hover:bg-gray-100 transition-colors"
                               >
@@ -791,7 +706,7 @@ export default function InvestmentsPage() {
                               </Button>
                               <Button
                                 onClick={handleInvestment}
-                                disabled={isProcessing || !investmentAmount || !selectedPaymentMethod}
+                                disabled={isProcessing || !investmentAmount}
                                 className="w-full sm:w-auto h-12 text-base bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] hover:from-[#ff5858]/90 hover:via-[#ff7e5f]/90 hover:to-[#ff9966]/90 text-white shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 {isProcessing ? (
@@ -800,7 +715,7 @@ export default function InvestmentsPage() {
                                     Processing...
                                   </>
                                 ) : (
-                                  'Continue to Payment'
+                                  'Invest from Wallet'
                                 )}
                               </Button>
                             </DialogFooter>
@@ -952,113 +867,6 @@ export default function InvestmentsPage() {
           </div>
         </TabsContent>
       </Tabs>
-
-      <Dialog open={showPaymentDetails} onOpenChange={setShowPaymentDetails}>
-        <DialogContent className="sm:max-w-[425px] bg-white/95 dark:bg-[#232526]/95">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] bg-clip-text text-transparent">
-              Payment Details
-            </DialogTitle>
-            <DialogDescription>
-              Please follow the instructions below to complete your payment
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            {selectedPaymentMethod?.type === 'deposit' && selectedPlan && (
-              <>
-                {selectedPaymentMethod.id === 'bank-transfer' ? (
-                  <div className="space-y-4">
-                    <div className="rounded-lg border p-4 bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10">
-                      <h4 className="font-medium">Bank Transfer Details</h4>
-                      <div className="mt-2 space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">Bank Name</span>
-                          <span className="font-medium">First Bank</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">Account Number</span>
-                          <span className="font-medium">1234567890</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">Account Name</span>
-                          <span className="font-medium">Investment Platform</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">Amount</span>
-                          <span className="font-medium text-green-600">
-                            {selectedPlan.type === 'naira'
-                              ? '₦' + Number(investmentAmount).toLocaleString()
-                              : `$${investmentAmount}`}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <Alert>
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>Important</AlertTitle>
-                      <AlertDescription>
-                        Please include your account ID as the payment reference.
-                        Your investment will be activated once we confirm your payment.
-                      </AlertDescription>
-                    </Alert>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="rounded-lg border p-4 bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10">
-                      <h4 className="font-medium">Crypto Payment Details</h4>
-                      <div className="mt-2 space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">Network</span>
-                          <span className="font-medium">Tether (USDT)</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">Wallet Address</span>
-                          <span className="font-medium">0x1234...5678</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">Amount</span>
-                          <span className="font-medium text-green-600">
-                            ${investmentAmount}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <Alert>
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>Important</AlertTitle>
-                      <AlertDescription>
-                        Please send the exact amount to the wallet address above.
-                        Your investment will be activated once we confirm your payment.
-                      </AlertDescription>
-                    </Alert>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowPaymentDetails(false)}
-            >
-              Close
-            </Button>
-            <Button
-              onClick={() => {
-                toast.success('Payment Instructions Sent', {
-                  description: 'We have sent the payment instructions to your email.',
-                })
-                setShowPaymentDetails(false)
-                setSelectedPlan(null)
-                setSelectedPaymentMethod(null)
-              }}
-              className="bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] hover:from-[#ff5858]/90 hover:via-[#ff7e5f]/90 hover:to-[#ff9966]/90 text-white"
-            >
-              I've Made the Payment
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 } 
