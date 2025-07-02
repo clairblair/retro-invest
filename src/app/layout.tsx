@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "next-themes";
+import { Providers } from "@/lib/providers";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -12,8 +13,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Investment Platform",
-  description: "A modern investment platform for managing your investments.",
+  title: "KLTMINES Investment Platform",
+  description: "A modern investment platform for managing your investments with real-time tracking and analytics.",
 };
 
 export default function RootLayout({
@@ -24,10 +25,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} antialiased`}>
       <body className="min-h-screen bg-gray-50 font-sans">
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-        {children}
-          <Toaster />
-        </ThemeProvider>
+        <Providers>
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+            {children}
+            <Toaster />
+          </ThemeProvider>
+        </Providers>
       </body>
     </html>
   );

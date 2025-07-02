@@ -153,6 +153,6 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## 📬 Contact
 
-For questions, feedback, or support, please contact [Irotochukwusamuel](mailto:irotochukwusamuel@gmail.com) or open an issue on [GitHub](https://github.com/Irotochukwusamuel/retro-invest).
+
 
 ---

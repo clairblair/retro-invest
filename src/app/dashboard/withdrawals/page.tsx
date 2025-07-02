@@ -36,46 +36,10 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-
-interface WithdrawalTransaction {
-  id: number
-  amount: string
-  date: string
-  status: 'completed' | 'pending' | 'failed'
-  type: 'bank' | 'crypto'
-  currency: 'NGN' | 'USDT'
-}
-
-const withdrawalTransactions: WithdrawalTransaction[] = [
-  {
-    id: 1,
-    amount: '₦150,000',
-    date: '2024-03-20',
-    status: 'completed',
-    type: 'bank',
-    currency: 'NGN',
-  },
-  {
-    id: 2,
-    amount: '$500',
-    date: '2024-03-19',
-    status: 'pending',
-    type: 'crypto',
-    currency: 'USDT',
-  },
-  {
-    id: 3,
-    amount: '₦75,000',
-    date: '2024-03-17',
-    status: 'failed',
-    type: 'bank',
-    currency: 'NGN',
-  },
-]
+import { useWalletBalance, useTransactionHistory } from '@/lib/hooks/useWallet'
+import { formatCurrency, formatDate } from '@/lib/utils'
 
 export default function WithdrawalsPage() {
-  const [isLoading, setIsLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'naira' | 'crypto'>('naira')
   const [showAllTransactions, setShowAllTransactions] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [transactionsPerPage] = useState(10)
@@ -84,12 +48,42 @@ export default function WithdrawalsPage() {
   const [typeFilter, setTypeFilter] = useState('all')
   const [currencyFilter, setCurrencyFilter] = useState('all')
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1500)
-    return () => clearTimeout(timer)
-  }, [])
+  // Real API hooks
+  const { data: walletBalance, isLoading: walletLoading } = useWalletBalance()
+  const { data: transactionData, isLoading: transactionsLoading } = useTransactionHistory({
+    type: 'withdrawal',
+    limit: 100,
+    sortBy: 'createdAt',
+    sortOrder: 'desc'
+  })
+
+  const isLoading = walletLoading || transactionsLoading
+  const withdrawalTransactions = transactionData?.transactions || []
+
+  // Calculate withdrawal statistics
+  const calculateWithdrawalStats = () => {
+    const totalWithdrawn = withdrawalTransactions
+      .filter(t => t.status === 'completed')
+      .reduce((sum, t) => sum + t.amount, 0)
+    
+    const pendingWithdrawals = withdrawalTransactions
+      .filter(t => t.status === 'pending')
+      .reduce((sum, t) => sum + t.amount, 0)
+
+    const thisMonthWithdrawals = withdrawalTransactions
+      .filter(t => {
+        const transactionDate = new Date(t.createdAt)
+        const now = new Date()
+        return transactionDate.getMonth() === now.getMonth() && 
+               transactionDate.getFullYear() === now.getFullYear() &&
+               t.status === 'completed'
+      })
+      .reduce((sum, t) => sum + t.amount, 0)
+
+    return { totalWithdrawn, pendingWithdrawals, thisMonthWithdrawals }
+  }
+
+  const { totalWithdrawn, pendingWithdrawals, thisMonthWithdrawals } = calculateWithdrawalStats()
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -104,27 +98,27 @@ export default function WithdrawalsPage() {
     }
   }
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'bank':
-        return <BanknotesIcon className="h-4 w-4 text-blue-500" />
-      case 'crypto':
-        return <WalletIcon className="h-4 w-4 text-purple-500" />
-      default:
-        return null
+  const getTypeIcon = (paymentMethod?: string) => {
+    if (paymentMethod?.includes('bank') || paymentMethod?.includes('transfer')) {
+      return <BanknotesIcon className="h-4 w-4 text-blue-500" />
+    } else if (paymentMethod?.includes('crypto')) {
+      return <WalletIcon className="h-4 w-4 text-purple-500" />
+    } else {
+      return <WalletIcon className="h-4 w-4 text-gray-500" />
     }
-  }
-
-  const handleWithdrawal = () => {
-    toast.success('Withdrawal request submitted successfully')
   }
 
   // Calculate pagination
   const filteredTransactions = withdrawalTransactions.filter(transaction => {
-    const matchesSearch = transaction.amount.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesSearch = 
+      transaction.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      transaction.amount.toString().includes(searchQuery.toLowerCase()) ||
+      transaction.reference.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = statusFilter === 'all' || transaction.status === statusFilter
-    const matchesType = typeFilter === 'all' || transaction.type === typeFilter
-    const matchesCurrency = currencyFilter === 'all' || transaction.currency === currencyFilter
+    const matchesType = typeFilter === 'all' || 
+      (typeFilter === 'bank' && transaction.paymentMethod?.includes('bank')) ||
+      (typeFilter === 'crypto' && transaction.paymentMethod?.includes('crypto'))
+    const matchesCurrency = currencyFilter === 'all' || transaction.currency === currencyFilter.toLowerCase()
     return matchesSearch && matchesStatus && matchesType && matchesCurrency
   })
 
@@ -158,7 +152,7 @@ export default function WithdrawalsPage() {
           >
             <Badge variant="outline" className="flex items-center gap-2 bg-white/50 backdrop-blur-sm">
               <WalletIcon className="h-4 w-4" />
-              Available Balance: ₦250,000
+              Available Balance: {formatCurrency(walletBalance?.totalBalance?.naira || 0, 'naira')}
             </Badge>
           </motion.div>
           <motion.div
@@ -167,13 +161,13 @@ export default function WithdrawalsPage() {
           >
             <Badge variant="outline" className="flex items-center gap-2 bg-white/50 backdrop-blur-sm">
               <ClockIcon className="h-4 w-4" />
-              Pending: ₦75,000
+              Pending: {formatCurrency(pendingWithdrawals, 'naira')}
             </Badge>
           </motion.div>
         </div>
       </motion.div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {isLoading ? (
           <>
             {[1, 2, 3, 4].map((i) => (
@@ -215,7 +209,7 @@ export default function WithdrawalsPage() {
                 <CardContent className="p-6">
                   <div className="space-y-4">
                     <div className="rounded-lg bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-4">
-                      <p className="text-2xl font-bold">₦250,000</p>
+                      <p className="text-2xl font-bold">{formatCurrency(walletBalance?.totalBalance?.naira || 0, 'naira')}</p>
                       <p className="text-sm text-gray-500">Total available</p>
                     </div>
                     <div className="flex justify-between text-sm">
@@ -250,7 +244,7 @@ export default function WithdrawalsPage() {
                 <CardContent className="p-6">
                   <div className="space-y-4">
                     <div className="rounded-lg bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-4">
-                      <p className="text-2xl font-bold">₦75,000</p>
+                      <p className="text-2xl font-bold">{formatCurrency(pendingWithdrawals, 'naira')}</p>
                       <p className="text-sm text-gray-500">Processing</p>
                     </div>
                     <div className="flex justify-between text-sm">
@@ -285,57 +279,13 @@ export default function WithdrawalsPage() {
                 <CardContent className="p-6">
                   <div className="space-y-4">
                     <div className="rounded-lg bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-4">
-                      <p className="text-2xl font-bold">₦1,250,000</p>
+                      <p className="text-2xl font-bold">{formatCurrency(totalWithdrawn, 'naira')}</p>
                       <p className="text-sm text-gray-500">Total withdrawn</p>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">This Month</span>
-                      <span className="font-medium">₦350,000</span>
+                      <span className="font-medium">{formatCurrency(thisMonthWithdrawals, 'naira')}</span>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              whileHover={{ y: -5 }}
-            >
-              <Card className="overflow-hidden border-2 hover:border-blue-500 transition-colors">
-                <CardHeader className="border-b bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="rounded-full bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] p-2 text-white">
-                        <ArrowDownTrayIcon className="h-6 w-6" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">Withdrawal Methods</CardTitle>
-                        <p className="text-sm text-gray-500">Available options</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div className="rounded-lg bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-4">
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">Bank Transfer</span>
-                          <span className="font-medium">₦2,000 - ₦1M</span>
-                        </div>
-                        <Progress value={75} className="h-2" />
-                        <div className="flex justify-between text-sm mt-2">
-                          <span className="text-gray-500">Crypto</span>
-                          <span className="font-medium">$10 - $10k</span>
-                        </div>
-                        <Progress value={25} className="h-2" />
-                      </div>
-                    </div>
-                    <p className="mt-2 text-xs text-gray-500">
-                      Minimum withdrawal: {activeTab === 'naira' ? '₦2,000' : '$10'}
-                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -373,35 +323,49 @@ export default function WithdrawalsPage() {
           <CardContent className="p-6">
             <ScrollArea className="h-[300px]">
               <div className="space-y-4">
-                {withdrawalTransactions.map((transaction) => (
-                  <motion.div
-                    key={transaction.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="rounded-full bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] p-2">
-                        {getTypeIcon(transaction.type)}
+                {currentTransactions.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <ArrowDownTrayIcon className="h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No Withdrawals Yet</h3>
+                    <p className="text-gray-500 mb-4">You haven't made any withdrawals yet. Start earning to withdraw your profits.</p>
+                    <Button 
+                      onClick={() => window.location.href = '/dashboard/investments'}
+                      className="bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] hover:from-[#ff4848] hover:via-[#ff6e4f] hover:to-[#ff8956] text-white"
+                    >
+                      Start Investing
+                    </Button>
+                  </div>
+                ) : (
+                  currentTransactions.map((transaction) => (
+                    <motion.div
+                      key={transaction.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className="rounded-full bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] p-2">
+                          {getTypeIcon(transaction.paymentMethod)}
+                        </div>
+                        <div>
+                          <p className="font-medium">{formatCurrency(transaction.amount, transaction.currency)}</p>
+                          <p className="text-sm text-gray-500">{formatDate(transaction.createdAt)}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">{transaction.amount}</p>
-                        <p className="text-sm text-gray-500">{transaction.date}</p>
+                      <div className="flex items-center space-x-4">
+                        <span
+                          className={cn(
+                            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+                            getStatusColor(transaction.status)
+                          )}
+                        >
+                          {transaction.status}
+                        </span>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <span
-                        className={cn(
-                          "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                          getStatusColor(transaction.status)
-                        )}
-                      >
-                        {transaction.status}
-                      </span>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  ))
+                )}
               </div>
             </ScrollArea>
           </CardContent>
@@ -486,41 +450,62 @@ export default function WithdrawalsPage() {
             <div className="flex-1 overflow-hidden">
               <ScrollArea className="h-full">
                 <div className="p-6 space-y-4">
-                  {currentTransactions.map((transaction) => (
-                    <motion.div
-                      key={transaction.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, ease: "easeOut" }}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg border-2 p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300"
-                    >
-                      <div className="flex items-center space-x-4">
-                        <div className="rounded-full bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] p-2 shadow-inner">
-                          {getTypeIcon(transaction.type)}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-base sm:text-lg">{transaction.amount}</p>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-sm text-gray-500">{transaction.date}</p>
-                            <span className="text-sm text-gray-500 hidden sm:inline">•</span>
-                            <p className="text-sm text-gray-500">{transaction.type}</p>
-                            <span className="text-sm text-gray-500 hidden sm:inline">•</span>
-                            <p className="text-sm text-gray-500">{transaction.currency}</p>
+                  {currentTransactions.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <ArrowDownTrayIcon className="h-12 w-12 text-gray-400 mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No Withdrawals Found</h3>
+                      <p className="text-gray-500 mb-4">
+                        {searchQuery || statusFilter !== 'all' || typeFilter !== 'all' || currencyFilter !== 'all'
+                          ? 'No withdrawals match your current filters. Try adjusting your search criteria.'
+                          : 'You haven\'t made any withdrawals yet. Start earning to withdraw your profits.'
+                        }
+                      </p>
+                      {!searchQuery && statusFilter === 'all' && typeFilter === 'all' && currencyFilter === 'all' && (
+                        <Button 
+                          onClick={() => window.location.href = '/dashboard/investments'}
+                          className="bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] hover:from-[#ff4848] hover:via-[#ff6e4f] hover:to-[#ff8956] text-white"
+                        >
+                          Start Investing
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    currentTransactions.map((transaction) => (
+                      <motion.div
+                        key={transaction.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg border-2 p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300"
+                      >
+                        <div className="flex items-center space-x-4">
+                          <div className="rounded-full bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] p-2 shadow-inner">
+                            {getTypeIcon(transaction.paymentMethod)}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-base sm:text-lg">{formatCurrency(transaction.amount, transaction.currency)}</p>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="text-sm text-gray-500">{formatDate(transaction.createdAt)}</p>
+                              <span className="text-sm text-gray-500 hidden sm:inline">•</span>
+                              <p className="text-sm text-gray-500">{transaction.paymentMethod}</p>
+                              <span className="text-sm text-gray-500 hidden sm:inline">•</span>
+                              <p className="text-sm text-gray-500">{transaction.currency}</p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center justify-between sm:justify-end gap-4">
-                        <span
-                          className={cn(
-                            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
-                            getStatusColor(transaction.status)
-                          )}
-                        >
-                          {transaction.status}
-                        </span>
-                      </div>
-                    </motion.div>
-                  ))}
+                        <div className="flex items-center justify-between sm:justify-end gap-4">
+                          <span
+                            className={cn(
+                              "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
+                              getStatusColor(transaction.status)
+                            )}
+                          >
+                            {transaction.status}
+                          </span>
+                        </div>
+                      </motion.div>
+                    ))
+                  )}
                 </div>
               </ScrollArea>
             </div>

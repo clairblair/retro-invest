@@ -4,19 +4,24 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useForgotPassword } from '@/lib/hooks/useAuth'
+import { toast } from 'sonner'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const forgotPasswordMutation = useForgotPassword()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setIsLoading(false)
-    router.push('/auth/verify-otp?next=change-password')
+    try {
+      await forgotPasswordMutation.mutateAsync(email)
+      toast.success('OTP sent to your email!')
+      router.push(`/auth/verify-otp?email=${encodeURIComponent(email)}&type=password_reset`)
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response?.data?.message || 'Failed to send OTP. Please try again.')
+    }
   }
 
   return (
@@ -32,7 +37,7 @@ export default function ForgotPasswordPage() {
       <div className="relative z-20 flex flex-1 min-h-screen justify-center items-center">
         <div className="w-full max-w-md bg-white rounded-xl shadow-2xl p-10">
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Forgot Password</h2>
-          <p className="text-sm text-gray-500 mb-6">Enter your email to receive a password reset code.</p>
+          <p className="text-sm text-gray-500 mb-6">Enter your email to receive a one-time code (OTP) for password reset.</p>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
@@ -49,9 +54,9 @@ export default function ForgotPasswordPage() {
             <Button
               type="submit"
               className="w-full h-11 mt-2 bg-gradient-to-r from-[#ff5858] to-[#ff9966] text-white font-semibold shadow-md hover:from-[#ff7e5f] hover:to-[#ff9966] transition-all"
-              disabled={isLoading}
+              disabled={forgotPasswordMutation.isPending}
             >
-              {isLoading ? 'Sending...' : 'Send Reset Code'}
+              {forgotPasswordMutation.isPending ? 'Sending...' : 'Send OTP'}
             </Button>
             <div className="text-center mt-4">
               <a href="/auth/login" className="text-sm text-orange-600 font-semibold hover:underline transition-colors">Back to Sign in</a>

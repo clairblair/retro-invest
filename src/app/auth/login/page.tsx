@@ -7,29 +7,55 @@ import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-
-
-
+import { useLogin } from '@/lib/hooks/useAuth'
+import { toast } from 'sonner'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
+  const loginMutation = useLogin()
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     rememberMe: false,
   })
-  const [currentReview, setCurrentReview] = useState(0)
-
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    router.push('/dashboard')
+    e.stopPropagation()
+    
+    if (loginMutation.isPending) {
+      return // Prevent multiple submissions
+    }
+
+    // Basic validation
+    if (!formData.email || !formData.password) {
+      toast.error('Please fill in all fields')
+      return
+    }
+    
+    try {
+      await loginMutation.mutateAsync({
+        email: formData.email,
+        password: formData.password,
+      })
+      
+      toast.success('Login successful!')
+      router.push('/dashboard')
+    } catch (error: any) {
+      
+      // Handle different types of errors
+      if (error?.response?.status === 401) {
+        toast.error('Invalid email or password')
+      } else if (error?.response?.status === 500) {
+        toast.error('Server error. Please try again later.')
+      } else if (error?.code === 'NETWORK_ERROR' || error?.message?.includes('Network Error')) {
+        toast.error('Network error. Please check your connection.')
+      } else {
+        const errorMessage = error?.response?.data?.message || error?.message || 'Login failed. Please try again.'
+        toast.error(errorMessage)
+      }
+    }
   }
 
   return (
@@ -69,7 +95,6 @@ export default function LoginPage() {
               <li className="flex items-center text-white text-base opacity-80"><span className="mr-2 text-white">•</span> Instant withdrawals</li>
               <li className="flex items-center text-white text-base opacity-80"><span className="mr-2 text-white">•</span> Trusted by professionals</li>
             </ul>
-
           </div>
         </div>
         {/* Right Card */}
@@ -93,14 +118,14 @@ export default function LoginPage() {
               <div>
                 <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password</Label>
                 <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="mt-1 h-11 bg-white border border-gray-200 focus:border-orange-400 focus:ring-orange-200 pr-10"
-                    required
-                  />
+                  required
+                />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
@@ -120,9 +145,9 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 className="w-full h-11 mt-2 bg-gradient-to-r from-[#ff5858] to-[#ff9966] text-white font-semibold shadow-md hover:from-[#ff7e5f] hover:to-[#ff9966] transition-all"
-                disabled={isLoading}
+                disabled={loginMutation.isPending}
               >
-                {isLoading ? 'Signing in...' : 'Login'}
+                {loginMutation.isPending ? 'Signing in...' : 'Login'}
               </Button>
               <div className="text-center mt-4">
                 <div className="text-sm text-gray-600">Don&apos;t have an account? </div>

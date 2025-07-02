@@ -8,34 +8,83 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import Image from 'next/image'
-
-
+import { useRegister } from '@/lib/hooks/useAuth'
+import { toast } from 'sonner'
 
 export default function RegisterPage() {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
+  const registerMutation = useRegister()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [formData, setFormData] = useState({
-    fullName: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
+    phoneNumber: '',
     agreeToTerms: false,
     referralCode: '',
   })
-  const [currentReview, setCurrentReview] = useState(0)
 
-
+  // Check for referral code in URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref');
+    if (refCode) {
+      setFormData(prev => ({ ...prev, referralCode: refCode }));
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setIsLoading(false)
-    router.push('/auth/verify-otp?next=dashboard')
+    e.stopPropagation()
+    
+    if (registerMutation.isPending) {
+      return // Prevent multiple submissions
+    }
+
+    // Basic validation
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Passwords do not match')
+      return
+    }
+    
+    if (!formData.agreeToTerms) {
+      toast.error('Please agree to the terms and conditions')
+      return
+    }
+    
+    try {
+      const result = await registerMutation.mutateAsync({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        phoneNumber: formData.phoneNumber || undefined,
+        referralCode: formData.referralCode || undefined,
+      })
+      
+      toast.success('Registration successful! Please check your email for verification code.')
+      
+      // Redirect to OTP verification with email and type
+      router.push(`/auth/verify-otp?email=${encodeURIComponent(formData.email)}&type=email_verification`)
+    } catch (error: any) {
+      console.error('Registration error:', error)
+      
+      // Handle different types of errors
+      if (error?.response?.status === 400) {
+        const errorMessage = error?.response?.data?.message || 'Registration failed. Please check your details.'
+        toast.error(errorMessage)
+      } else if (error?.response?.status === 409) {
+        toast.error('An account with this email already exists.')
+      } else if (error?.response?.status === 500) {
+        toast.error('Server error. Please try again later.')
+      } else {
+        const errorMessage = error?.response?.data?.message || error?.message || 'Registration failed. Please try again.'
+        toast.error(errorMessage)
+      }
+    }
   }
 
   return (
@@ -75,26 +124,39 @@ export default function RegisterPage() {
               <li className="flex items-center text-white text-base opacity-80"><span className="mr-2 text-white">•</span> Automated earnings</li>
               <li className="flex items-center text-white text-base opacity-80"><span className="mr-2 text-white">•</span> Real-time portfolio tracking</li>
             </ul>
-  
           </div>
         </div>
         {/* Right Card */}
         <div className="flex flex-col justify-center items-center flex-1 min-h-screen">
           <div className="w-full max-w-md bg-white rounded-xl shadow-2xl p-10">
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Register</h2>
-            <p className="text-sm text-gray-500 mb-6"></p>
+            <p className="text-sm text-gray-500 mb-6">Create your account to start investing</p>
             <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">First Name</Label>
+                  <Input
+                    id="firstName"
+                    type="text"
+                    placeholder="John"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    className="mt-1 h-11 bg-white border border-gray-200 focus:border-orange-400 focus:ring-orange-200"
+                    required
+                  />
+                </div>
               <div>
-                <Label htmlFor="fullName" className="text-sm font-medium text-gray-700">Full Name</Label>
+                  <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">Last Name</Label>
                 <Input
-                  id="fullName"
+                    id="lastName"
                   type="text"
-                  placeholder="John Doe"
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    placeholder="Doe"
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                   className="mt-1 h-11 bg-white border border-gray-200 focus:border-orange-400 focus:ring-orange-200"
                   required
                 />
+                </div>
               </div>
               <div>
                 <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
@@ -109,16 +171,27 @@ export default function RegisterPage() {
                 />
               </div>
               <div>
+                <Label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">Phone Number <span className="text-gray-400">(optional)</span></Label>
+                <Input
+                  id="phoneNumber"
+                  type="tel"
+                  placeholder="+234 800 000 0000"
+                  value={formData.phoneNumber}
+                  onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                  className="mt-1 h-11 bg-white border border-gray-200 focus:border-orange-400 focus:ring-orange-200"
+                />
+              </div>
+              <div>
                 <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password</Label>
                 <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="mt-1 h-11 bg-white border border-gray-200 focus:border-orange-400 focus:ring-orange-200 pr-10"
-                    required
-                  />
+                  required
+                />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
@@ -135,11 +208,11 @@ export default function RegisterPage() {
               <div>
                 <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">Confirm Password</Label>
                 <div className="relative">
-                  <Input
-                    id="confirmPassword"
+                <Input
+                  id="confirmPassword"
                     type={showConfirmPassword ? 'text' : 'password'}
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                     className="mt-1 h-11 bg-white border border-gray-200 focus:border-orange-400 focus:ring-orange-200 pr-10"
                     required
                   />
@@ -179,9 +252,9 @@ export default function RegisterPage() {
               <Button
                 type="submit"
                 className="w-full h-11 mt-2 bg-gradient-to-r from-[#ff5858] to-[#ff9966] text-white font-semibold shadow-md hover:from-[#ff7e5f] hover:to-[#ff9966] transition-all"
-                disabled={isLoading}
+                disabled={registerMutation.isPending}
               >
-                {isLoading ? 'Creating account...' : 'Register'}
+                {registerMutation.isPending ? 'Creating account...' : 'Register'}
               </Button>
               <div className="text-center mt-4">
                 <span className="text-sm text-gray-600">Already have an account? </span>

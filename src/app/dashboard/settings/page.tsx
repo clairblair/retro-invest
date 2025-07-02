@@ -29,6 +29,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useUser, useUpdateProfile } from '@/lib/hooks/useAuth'
 
 interface NotificationSetting {
   id: string
@@ -59,7 +60,9 @@ const notificationSettings: NotificationSetting[] = [
 ]
 
 export default function SettingsPage() {
-  const [isLoading, setIsLoading] = useState(true)
+  const { data: user, isLoading: userLoading } = useUser()
+  const updateProfile = useUpdateProfile()
+  
   const [notifications, setNotifications] = useState(notificationSettings)
   const [language, setLanguage] = useState('en')
   const [currency, setCurrency] = useState('NGN')
@@ -78,12 +81,27 @@ export default function SettingsPage() {
   })
   const [activeMobileTab, setActiveMobileTab] = useState('profile')
 
+  // Profile form state
+  const [profileForm, setProfileForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phoneNumber: '',
+  })
+
+  // Update form when user data loads
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1500)
-    return () => clearTimeout(timer)
-  }, [])
+    if (user) {
+      setProfileForm({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        phoneNumber: user.phoneNumber || '',
+      })
+    }
+  }, [user])
+
+  const isLoading = userLoading
 
   const handleNotificationToggle = (id: string) => {
     setNotifications(notifications.map(setting => 
@@ -92,8 +110,13 @@ export default function SettingsPage() {
     toast.success('Notification settings updated')
   }
 
-  const handleSaveSettings = () => {
-    toast.success('Settings saved successfully')
+  const handleProfileUpdate = async () => {
+    try {
+      await updateProfile.mutateAsync(profileForm)
+      toast.success('Profile updated successfully')
+    } catch (error) {
+      toast.error('Failed to update profile')
+    }
   }
 
   const handleBankDetailsUpdate = () => {
@@ -191,43 +214,53 @@ export default function SettingsPage() {
                 </CardHeader>
                 <CardContent className="p-6">
                   <div className="space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName">First Name</Label>
+                        <Input 
+                          id="firstName" 
+                          placeholder="Enter your first name" 
+                          value={profileForm.firstName}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, firstName: e.target.value }))}
+                        />
+                      </div>
                     <div className="space-y-2">
-                      <Label htmlFor="name">Full Name</Label>
-                      <Input id="name" placeholder="Enter your full name" />
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input 
+                          id="lastName" 
+                          placeholder="Enter your last name" 
+                          value={profileForm.lastName}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, lastName: e.target.value }))}
+                        />
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="email">Email Address</Label>
-                      <Input id="email" type="email" placeholder="Enter your email" />
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        placeholder="Enter your email" 
+                        value={profileForm.email}
+                        onChange={(e) => setProfileForm(prev => ({ ...prev, email: e.target.value }))}
+                      />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input id="phone" type="tel" placeholder="Enter your phone number" />
+                      <Label htmlFor="phoneNumber">Phone Number</Label>
+                      <Input 
+                        id="phoneNumber" 
+                        type="tel" 
+                        placeholder="Enter your phone number" 
+                        value={profileForm.phoneNumber}
+                        onChange={(e) => setProfileForm(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                      />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="language">Language</Label>
-                      <Select value={language} onValueChange={setLanguage}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select language" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="en">English</SelectItem>
-                          <SelectItem value="fr">French</SelectItem>
-                          <SelectItem value="es">Spanish</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="currency">Currency</Label>
-                      <Select value={currency} onValueChange={setCurrency}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select currency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="NGN">Nigerian Naira (₦)</SelectItem>
-                          <SelectItem value="USDT">Tether (USDT)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <Button 
+                      onClick={handleProfileUpdate}
+                      disabled={updateProfile.isPending}
+                      className="w-full bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] hover:from-[#ff4848] hover:via-[#ff6e4f] hover:to-[#ff8956] text-white"
+                    >
+                      {updateProfile.isPending ? 'Updating...' : 'Update Profile'}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -448,41 +481,20 @@ export default function SettingsPage() {
               <CardContent className="p-4">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" placeholder="Enter your full name" className="bg-white/50 backdrop-blur-sm" />
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input id="firstName" placeholder="Enter your first name" className="bg-white/50 backdrop-blur-sm" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input id="lastName" placeholder="Enter your last name" className="bg-white/50 backdrop-blur-sm" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
                     <Input id="email" type="email" placeholder="Enter your email" className="bg-white/50 backdrop-blur-sm" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input id="phone" type="tel" placeholder="Enter your phone number" className="bg-white/50 backdrop-blur-sm" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="language">Language</Label>
-                    <Select value={language} onValueChange={setLanguage}>
-                      <SelectTrigger className="bg-white/50 backdrop-blur-sm">
-                        <SelectValue placeholder="Select language" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="en">English</SelectItem>
-                        <SelectItem value="fr">French</SelectItem>
-                        <SelectItem value="es">Spanish</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="currency">Currency</Label>
-                    <Select value={currency} onValueChange={setCurrency}>
-                      <SelectTrigger className="bg-white/50 backdrop-blur-sm">
-                        <SelectValue placeholder="Select currency" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="NGN">Nigerian Naira (₦)</SelectItem>
-                        <SelectItem value="USDT">Tether (USDT)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="phoneNumber">Phone Number</Label>
+                    <Input id="phoneNumber" type="tel" placeholder="Enter your phone number" className="bg-white/50 backdrop-blur-sm" />
                   </div>
                 </div>
               </CardContent>
@@ -649,10 +661,11 @@ export default function SettingsPage() {
         className="flex justify-end"
       >
         <Button 
-          onClick={handleSaveSettings}
+          onClick={handleProfileUpdate}
+          disabled={updateProfile.isPending}
           className="bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600 dark:bg-[#232526] transition-all duration-300 shadow-lg hover:shadow-xl px-8 py-6 text-lg"
         >
-          Save Changes
+          {updateProfile.isPending ? 'Updating...' : 'Update Profile'}
         </Button>
       </motion.div>
 

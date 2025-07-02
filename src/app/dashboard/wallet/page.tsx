@@ -27,6 +27,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { formatDate } from '@/lib/utils'
 import {
   Dialog,
   DialogContent,
@@ -46,6 +47,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Separator } from "@/components/ui/separator"
 import { Inter, Poppins } from 'next/font/google'
+import { useWalletBalance, useTransactionHistory, useCreateDeposit, useCreateWithdrawal } from '@/lib/hooks/useWallet'
 
 const inter = Inter({ subsets: ['latin'] })
 const poppins = Poppins({ 
@@ -53,48 +55,6 @@ const poppins = Poppins({
   subsets: ['latin'],
   variable: '--font-poppins',
 })
-
-interface Transaction {
-  id: number
-  type: 'deposit' | 'withdrawal' | 'transfer-in' | 'transfer-out' | 'investment'
-  amount: number
-  date: string
-  status: 'Completed' | 'Pending' | 'Failed'
-  description: string
-}
-
-const recentTransactions: Transaction[] = [
-  { id: 1, type: 'deposit', amount: 500, date: '2024-07-21', status: 'Completed', description: 'Bank Deposit' },
-  { id: 2, type: 'investment', amount: -450, date: '2024-07-20', status: 'Completed', description: 'Vanguard Plan' },
-  { id: 3, type: 'transfer-in', amount: 120, date: '2024-07-19', status: 'Completed', description: 'From Profit Wallet' },
-  { id: 4, type: 'withdrawal', amount: -200, date: '2024-07-18', status: 'Completed', description: 'To Bank Account' },
-  { id: 5, type: 'transfer-out', amount: -120, date: '2024-07-19', status: 'Completed', description: 'To Main Wallet' },
-]
-
-interface WalletBalance {
-  currency: string
-  amount: number
-  available: number
-  pending: number
-  locked: number
-}
-
-const walletBalances: WalletBalance[] = [
-  {
-    currency: 'NGN',
-    amount: 1250000,
-    available: 1000000,
-    pending: 150000,
-    locked: 100000,
-  },
-  {
-    currency: 'USDT',
-    amount: 2500,
-    available: 2000,
-    pending: 300,
-    locked: 200,
-  },
-]
 
 interface DepositAccount {
   currency: string
@@ -142,15 +102,7 @@ const withdrawalAccounts: WithdrawalAccount[] = [
   },
 ]
 
-interface Balance {
-  currency: string
-  amount: number
-  change: string
-  changeType: 'increase' | 'decrease'
-}
-
 export default function WalletPage() {
-  const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('naira')
   const [showDepositDialog, setShowDepositDialog] = useState(false)
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false)
@@ -178,71 +130,88 @@ export default function WalletPage() {
   const [transactionSort, setTransactionSort] = useState('date')
   const [searchQuery, setSearchQuery] = useState('')
 
-  const [mainBalance, setMainBalance] = useState({ available: 1000, pending: 150, locked: 100 })
-  const [profitBalance, setProfitBalance] = useState(850.75)
-
   const [transferAmount, setTransferAmount] = useState('')
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [depositAmount, setDepositAmount] = useState('')
 
-  // Calculate pagination
+  // Real API hooks
+  const { data: walletBalance, isLoading: walletLoading } = useWalletBalance()
+  const { data: transactionData, isLoading: transactionsLoading } = useTransactionHistory({
+    limit: 50,
+    sortBy: 'createdAt',
+    sortOrder: 'desc'
+  })
+  const createDeposit = useCreateDeposit()
+  const createWithdrawal = useCreateWithdrawal()
+
+  const isLoading = walletLoading || transactionsLoading
+  const transactions = transactionData?.transactions || []
+
+  // Create wallet balances array from real data
+  const walletBalances = [
+    {
+      currency: 'NGN',
+      amount: walletBalance?.totalBalance?.naira || 0,
+      available: walletBalance?.walletBalances?.naira || 0,
+      pending: 0, // Backend doesn't provide pending amounts yet
+      locked: 0, // Backend doesn't provide locked amounts yet
+    },
+    {
+      currency: 'USDT',
+      amount: walletBalance?.totalBalance?.usdt || 0,
+      available: walletBalance?.walletBalances?.usdt || 0,
+      pending: 0,
+      locked: 0,
+    },
+  ]
+
+  // Calculate pagination for transactions
   const indexOfLastTransaction = currentPage * itemsPerPage
   const indexOfFirstTransaction = indexOfLastTransaction - itemsPerPage
-  const currentTransactions = recentTransactions.slice(indexOfFirstTransaction, indexOfLastTransaction)
-  const totalPages = Math.ceil(recentTransactions.length / itemsPerPage)
+  const currentTransactions = transactions.slice(indexOfFirstTransaction, indexOfLastTransaction)
+  const totalPages = Math.ceil(transactions.length / itemsPerPage)
 
   // Filter and sort transactions
-  const filteredTransactions = recentTransactions
+  const filteredTransactions = transactions
     .filter(transaction => {
       if (transactionFilter === 'all') return true
       return transaction.type === transactionFilter
     })
-    .filter(transaction => {
-      if (!searchQuery) return true
-      const searchLower = searchQuery.toLowerCase()
-      return (
-        transaction.type.toLowerCase().includes(searchLower) ||
-        transaction.amount.toString().includes(searchLower) ||
-        transaction.description.toLowerCase().includes(searchLower)
-      )
-    })
-    .sort((a, b) => {
-      if (transactionSort === 'date') {
-        return new Date(b.date).getTime() - new Date(a.date).getTime()
-      }
-      if (transactionSort === 'amount') {
-        return b.amount - a.amount
-      }
-      return 0
-    })
+    .filter(transaction =>
+      transaction.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      transaction.type.toLowerCase().includes(searchQuery.toLowerCase())
+    )
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1500)
-    return () => clearTimeout(timer)
-  }, [])
+    if (amount) {
+      const amountValue = Number(amount)
+      const fee = calculateWithdrawalFee(amountValue, selectedCurrency)
+      setDepositTotal(amountValue + fee)
+      setWithdrawalTotal(amountValue - fee)
+    }
+  }, [amount, selectedCurrency])
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Completed':
+    switch (status.toLowerCase()) {
+      case 'completed':
         return 'bg-green-100 text-green-800'
-      case 'Pending':
+      case 'pending':
         return 'bg-yellow-100 text-yellow-800'
-      case 'Failed':
+      case 'failed':
         return 'bg-red-100 text-red-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }
   }
 
-  const getTransactionIcon = (type: Transaction['type']) => {
+  const getTransactionIcon = (type: string) => {
     switch(type) {
       case 'deposit': return <ArrowDownIcon className="h-5 w-5 text-green-500" />
       case 'withdrawal': return <ArrowUpIcon className="h-5 w-5 text-red-500" />
-      case 'transfer-in': return <ArrowRightIcon className="h-5 w-5 text-blue-500" />
-      case 'transfer-out': return <ArrowLeftIcon className="h-5 w-5 text-orange-500" />
+      case 'transfer': return <ArrowRightIcon className="h-5 w-5 text-blue-500" />
       case 'investment': return <BanknotesIcon className="h-5 w-5 text-purple-500" />
+      case 'roi': return <CurrencyDollarIcon className="h-5 w-5 text-green-500" />
+      default: return <WalletIcon className="h-5 w-5 text-gray-500" />
     }
   }
 
@@ -263,35 +232,25 @@ export default function WalletPage() {
 
   const handleDeposit = async () => {
     if (!amount || !selectedMethod) {
-      toast.error('Error', {
-        description: 'Please fill in all required fields.',
-      })
+      toast.error('Please fill in all required fields.')
       return
     }
 
     // Enforce bank transfer for NGN deposits
     if (selectedCurrency === 'NGN' && selectedMethod !== 'bank') {
-      toast.error('Error', {
-        description: 'NGN deposits can only be made via bank transfer.',
-      })
+      toast.error('NGN deposits can only be made via bank transfer.')
       return
     }
 
     setIsProcessing(true)
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      await createDeposit.mutateAsync({
+        amount: parseFloat(amount),
+        currency: selectedCurrency.toLowerCase() as 'naira' | 'usdt',
+        paymentMethod: selectedMethod as 'bank_transfer' | 'crypto' | 'card'
+      })
       
-      if (depositStep === 1) {
-        setDepositStep(2)
-      } else if (depositStep === 2) {
-        setDepositStep(3)
-      } else {
-        setShowSuccessAnimation(true)
-        toast.success('Deposit initiated', {
-          description: 'Your deposit has been submitted for review.',
-        })
-        setTimeout(() => {
+      toast.success('Deposit request created successfully')
           setShowDepositDialog(false)
           setDepositStep(1)
           setAmount('')
@@ -299,13 +258,8 @@ export default function WalletPage() {
           setDepositProof(null)
           setDepositReference('')
           setDepositFromAccount('')
-          setShowSuccessAnimation(false)
-        }, 2000)
-      }
     } catch (error) {
-      toast.error('Error', {
-        description: 'There was an error processing your deposit.',
-      })
+      toast.error('Failed to create deposit request')
     } finally {
       setIsProcessing(false)
     }
@@ -325,66 +279,43 @@ export default function WalletPage() {
 
   const handleWithdrawal = async () => {
     if (!amount || !withdrawalMethod) {
-      toast.error('Error', {
-        description: 'Please fill in all required fields.',
-      })
+      toast.error('Please fill in all required fields.')
       return
     }
 
     // Enforce bank account for NGN withdrawals
     if (selectedCurrency === 'NGN' && withdrawalMethod !== 'bank') {
-      toast.error('Error', {
-        description: 'NGN withdrawals can only be made to bank accounts.',
-      })
+      toast.error('NGN withdrawals can only be made to bank accounts.')
       return
     }
 
     // Validate bank account details for NGN withdrawals
     if (selectedCurrency === 'NGN' && withdrawalMethod === 'bank' && 
         (!withdrawalToAccount?.bankName || !withdrawalToAccount?.accountNumber || !withdrawalToAccount?.accountName)) {
-      toast.error('Error', {
-        description: 'Please provide complete bank account details.',
-      })
+      toast.error('Please provide complete bank account details.')
       return
     }
 
     setIsProcessing(true)
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      await createWithdrawal.mutateAsync({
+        amount: parseFloat(amount),
+        currency: selectedCurrency.toLowerCase() as 'naira' | 'usdt',
+        withdrawalMethod: withdrawalMethod as 'bank_transfer' | 'crypto'
+      })
       
-      if (withdrawalStep === 1) {
-        setWithdrawalStep(2)
-      } else {
-        setShowSuccessAnimation(true)
-        toast.success('Withdrawal initiated', {
-          description: 'Your withdrawal request has been submitted successfully.',
-        })
-        setTimeout(() => {
+      toast.success('Withdrawal request created successfully')
           setShowWithdrawDialog(false)
           setWithdrawalStep(1)
           setAmount('')
           setWithdrawalMethod('')
           setWithdrawalToAccount(null)
-          setShowSuccessAnimation(false)
-        }, 2000)
-      }
     } catch (error) {
-      toast.error('Error', {
-        description: 'There was an error processing your withdrawal.',
-      })
+      toast.error('Failed to create withdrawal request')
     } finally {
       setIsProcessing(false)
     }
   }
-
-  useEffect(() => {
-    if (amount) {
-      const amountValue = Number(amount)
-      const fee = calculateWithdrawalFee(amountValue, selectedCurrency)
-      setWithdrawalTotal(amountValue - fee)
-    }
-  }, [amount, selectedCurrency])
 
   const getBalance = (currency: string) => {
     return walletBalances.find(balance => balance.currency === currency)
@@ -415,18 +346,6 @@ export default function WalletPage() {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
-  }
-
-  const handleTransfer = () => {
-    const amount = parseFloat(transferAmount)
-    if (isNaN(amount) || amount <= 0 || amount > profitBalance) {
-      toast.error("Invalid Transfer Amount", { description: "Please enter a valid amount to transfer." })
-      return
-    }
-    setProfitBalance(prev => prev - amount)
-    setMainBalance(prev => ({ ...prev, available: prev.available + amount }))
-    toast.success("Transfer Successful", { description: `$${amount.toFixed(2)} has been transferred to your Main Wallet.` })
-    setTransferAmount('')
   }
 
   return (
@@ -1011,42 +930,65 @@ export default function WalletPage() {
           <CardContent className="p-4 sm:p-6">
             <ScrollArea className="h-[300px] sm:h-[400px] pr-4">
               <div className="space-y-4">
-                {currentTransactions.map((transaction) => (
-                  <motion.div
-                    key={transaction.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg border-2 p-4 hover:bg-gray-50 transition-all duration-300"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="rounded-full bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-2 shadow-inner">
-                        {getTransactionIcon(transaction.type)}
-                      </div>
-                      <div>
-                        <p className="font-semibold capitalize">{transaction.description}</p>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-sm text-gray-500">{transaction.date}</p>
+                {currentTransactions.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <ArrowPathIcon className="h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No Transactions Yet</h3>
+                    <p className="text-gray-500 mb-4">You haven't made any wallet transactions yet. Start depositing or investing to see your activity here.</p>
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={() => setShowDepositDialog(true)}
+                        className="bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] hover:from-[#ff4848] hover:via-[#ff6e4f] hover:to-[#ff8956] text-white"
+                      >
+                        Make Deposit
+                      </Button>
+                      <Button 
+                        onClick={() => window.location.href = '/dashboard/investments'}
+                        variant="outline"
+                        className="bg-white/50 backdrop-blur-sm"
+                      >
+                        Start Investing
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  currentTransactions.map((transaction) => (
+                    <motion.div
+                      key={transaction.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg border-2 p-4 hover:bg-gray-50 transition-all duration-300"
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className="rounded-full bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-2 shadow-inner">
+                          {getTransactionIcon(transaction.type)}
+                        </div>
+                        <div>
+                          <p className="font-semibold capitalize">{transaction.description}</p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm text-gray-500">{formatDate(transaction.createdAt)}</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center justify-between sm:justify-end gap-4">
-                      <div className="text-right">
-                        <p className={cn("font-bold", transaction.amount > 0 ? 'text-green-500' : 'text-red-500')}>
-                          {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
-                        </p>
+                      <div className="flex items-center justify-between sm:justify-end gap-4">
+                        <div className="text-right">
+                          <p className={cn("font-bold", transaction.amount > 0 ? 'text-green-500' : 'text-red-500')}>
+                            {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
+                          </p>
+                        </div>
+                        <span
+                          className={cn(
+                            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
+                            getStatusColor(transaction.status)
+                          )}
+                        >
+                          {transaction.status}
+                        </span>
                       </div>
-                      <span
-                        className={cn(
-                          "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
-                          getStatusColor(transaction.status)
-                        )}
-                      >
-                        {transaction.status}
-                      </span>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  ))
+                )}
               </div>
             </ScrollArea>
 
@@ -1055,7 +997,7 @@ export default function WalletPage() {
               <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t pt-4">
                 <div className="flex items-center gap-2">
                   <p className="text-sm text-gray-500 text-center sm:text-left">
-                    Showing {indexOfFirstTransaction + 1} to {Math.min(indexOfLastTransaction, recentTransactions.length)} of {recentTransactions.length} transactions
+                    Showing {indexOfFirstTransaction + 1} to {Math.min(indexOfLastTransaction, transactions.length)} of {transactions.length} transactions
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1159,42 +1101,75 @@ export default function WalletPage() {
             {/* Transactions List */}
             <ScrollArea className="h-[50vh] sm:h-[60vh] pr-4">
               <div className="space-y-4">
-                {filteredTransactions.map((transaction) => (
-                  <motion.div
-                    key={transaction.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg border-2 p-4 hover:bg-gray-50 transition-all duration-300"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="rounded-full bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-2 shadow-inner">
-                        {getTransactionIcon(transaction.type)}
+                {filteredTransactions.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <ArrowPathIcon className="h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No Transactions Found</h3>
+                    <p className="text-gray-500 mb-4">
+                      {searchQuery || transactionFilter !== 'all' 
+                        ? 'No transactions match your current filters. Try adjusting your search criteria.'
+                        : 'You haven\'t made any wallet transactions yet. Start depositing or investing to see your activity here.'
+                      }
+                    </p>
+                    {!searchQuery && transactionFilter === 'all' && (
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={() => {
+                            setShowAllTransactions(false)
+                            setShowDepositDialog(true)
+                          }}
+                          className="bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] hover:from-[#ff4848] hover:via-[#ff6e4f] hover:to-[#ff8956] text-white"
+                        >
+                          Make Deposit
+                        </Button>
+                        <Button 
+                          onClick={() => window.location.href = '/dashboard/investments'}
+                          variant="outline"
+                          className="bg-white/50 backdrop-blur-sm"
+                        >
+                          Start Investing
+                        </Button>
                       </div>
-                      <div>
-                        <p className="font-semibold capitalize">{transaction.description}</p>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-sm text-gray-500">{transaction.date}</p>
+                    )}
+                  </div>
+                ) : (
+                  filteredTransactions.map((transaction: any) => (
+                    <motion.div
+                      key={transaction.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg border-2 p-4 hover:bg-gray-50 transition-all duration-300"
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className="rounded-full bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-2 shadow-inner">
+                          {getTransactionIcon(transaction.type)}
+                        </div>
+                        <div>
+                          <p className="font-semibold capitalize">{transaction.description}</p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm text-gray-500">{formatDate(transaction.createdAt)}</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center justify-between sm:justify-end gap-4">
-                      <div className="text-right">
-                        <p className={cn("font-bold", transaction.amount > 0 ? 'text-green-500' : 'text-red-500')}>
-                          {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
-                        </p>
+                      <div className="flex items-center justify-between sm:justify-end gap-4">
+                        <div className="text-right">
+                          <p className={cn("font-bold", transaction.amount > 0 ? 'text-green-500' : 'text-red-500')}>
+                            {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
+                          </p>
+                        </div>
+                        <span
+                          className={cn(
+                            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
+                            getStatusColor(transaction.status)
+                          )}
+                        >
+                          {transaction.status}
+                        </span>
                       </div>
-                      <span
-                        className={cn(
-                          "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
-                          getStatusColor(transaction.status)
-                        )}
-                      >
-                        {transaction.status}
-                      </span>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  ))
+                )}
               </div>
             </ScrollArea>
 

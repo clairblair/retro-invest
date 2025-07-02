@@ -10,6 +10,16 @@
 !.yarn/releases
 !.yarn/versions
 
+# backend build and env files (monorepo structure)
+/backend/dist
+/backend/.env
+/backend/.env.local
+/backend/.env.development.local
+/backend/.env.test.local
+/backend/.env.production.local
+/backend/backend.log
+/backend/logs
+
 # testing
 /coverage
 

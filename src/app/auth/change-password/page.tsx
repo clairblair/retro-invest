@@ -1,29 +1,61 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useResetPassword } from '@/lib/hooks/useAuth'
+import { toast } from 'sonner'
 
-export default function ChangePasswordPage() {
+function ChangePasswordForm() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const [error, setError] = useState('')
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const resetPasswordMutation = useResetPassword()
+  
+  const email = searchParams.get('email')
+  const resetToken = searchParams.get('resetToken')
+
+  useEffect(() => {
+    if (!email || !resetToken) {
+      toast.error('Invalid or missing email/reset token')
+      router.push('/auth/forgot-password')
+    }
+  }, [email, resetToken, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
+    
     if (password !== confirmPassword) {
-      setError('Passwords do not match.')
+      toast.error('Passwords do not match.')
       return
     }
-    setIsLoading(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setIsLoading(false)
+
+    if (!email || !resetToken) {
+      toast.error('Invalid email or reset token')
+      return
+    }
+    
+    try {
+      await resetPasswordMutation.mutateAsync({
+        email,
+        resetToken,
+        newPassword: password,
+      })
+      
+      toast.success('Password changed successfully!')
     setSubmitted(true)
+      
+      // Redirect to login after 2 seconds
+      setTimeout(() => {
+        router.push('/auth/login')
+      }, 2000)
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to change password. Please try again.')
+    }
   }
 
   return (
@@ -41,7 +73,12 @@ export default function ChangePasswordPage() {
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Change Password</h2>
           <p className="text-sm text-gray-500 mb-6">Enter your new password below.</p>
           {submitted ? (
-            <div className="text-green-600 text-center font-medium py-8">Your password has been changed successfully!</div>
+            <div className="text-center">
+              <div className="text-green-600 font-medium py-4 mb-4">
+                Your password has been changed successfully!
+              </div>
+              <p className="text-sm text-gray-500 mb-4">Redirecting to login...</p>
+            </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
@@ -54,6 +91,7 @@ export default function ChangePasswordPage() {
                   onChange={e => setPassword(e.target.value)}
                   className="mt-1 h-11 bg-white border border-gray-200 focus:border-orange-400 focus:ring-orange-200"
                   required
+                  minLength={6}
                 />
               </div>
               <div>
@@ -66,15 +104,15 @@ export default function ChangePasswordPage() {
                   onChange={e => setConfirmPassword(e.target.value)}
                   className="mt-1 h-11 bg-white border border-gray-200 focus:border-orange-400 focus:ring-orange-200"
                   required
+                  minLength={6}
                 />
               </div>
-              {error && <div className="text-red-600 text-sm text-center">{error}</div>}
               <Button
                 type="submit"
                 className="w-full h-11 mt-2 bg-gradient-to-r from-[#ff5858] to-[#ff9966] text-white font-semibold shadow-md hover:from-[#ff7e5f] hover:to-[#ff9966] transition-all"
-                disabled={isLoading}
+                disabled={resetPasswordMutation.isPending}
               >
-                {isLoading ? 'Changing...' : 'Change Password'}
+                {resetPasswordMutation.isPending ? 'Changing...' : 'Change Password'}
               </Button>
               <div className="text-center mt-4">
                 <a href="/auth/login" className="text-sm text-orange-600 font-semibold hover:underline transition-colors">Back to Sign in</a>
@@ -84,5 +122,13 @@ export default function ChangePasswordPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ChangePasswordPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ChangePasswordForm />
+    </Suspense>
   )
 } 

@@ -27,45 +27,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
-
-interface Transaction {
-  id: number
-  type: 'deposit' | 'withdrawal' | 'investment' | 'roi'
-  amount: string
-  date: string
-  status: 'completed' | 'pending' | 'failed'
-}
-
-const recentTransactions: Transaction[] = [
-  {
-    id: 1,
-    type: 'deposit',
-    amount: '₦500,000',
-    date: '2024-03-20',
-    status: 'completed',
-  },
-  {
-    id: 2,
-    type: 'investment',
-    amount: '₦300,000',
-    date: '2024-03-19',
-    status: 'completed',
-  },
-  {
-    id: 3,
-    type: 'roi',
-    amount: '₦15,000',
-    date: '2024-03-18',
-    status: 'completed',
-  },
-  {
-    id: 4,
-    type: 'withdrawal',
-    amount: '₦200,000',
-    date: '2024-03-17',
-    status: 'pending',
-  },
-]
+import { useWalletBalance, useTransactionHistory } from '@/lib/hooks/useWallet'
+import { useMyInvestments, useInvestmentStats } from '@/lib/hooks/useInvestments'
 
 const stats = [
   {
@@ -86,8 +49,15 @@ const stats = [
 ]
 
 export default function DashboardPage() {
+  const { data: walletBalance, isLoading: walletLoading } = useWalletBalance()
+  const { data: transactionData, isLoading: transactionsLoading } = useTransactionHistory({
+    limit: 20,
+    sortBy: 'createdAt',
+    sortOrder: 'desc',
+  })
+  const { data: investments, isLoading: investmentsLoading } = useMyInvestments()
+  const { data: investmentStats, isLoading: statsLoading } = useInvestmentStats()
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(true)
   const [showAllTransactions, setShowAllTransactions] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [transactionsPerPage] = useState(5)
@@ -97,12 +67,54 @@ export default function DashboardPage() {
   const [sortBy, setSortBy] = useState('date')
   const [sortOrder, setSortOrder] = useState('desc')
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1500)
-    return () => clearTimeout(timer)
-  }, [])
+  const isLoading = walletLoading || transactionsLoading || investmentsLoading || statsLoading
+
+  // Helper to format currency
+  const formatCurrency = (amount: number, currency: 'naira' | 'usdt') => {
+    if (currency === 'naira') return `₦${amount.toLocaleString()}`;
+    return `${amount} USDT`;
+  };
+
+  // Compute values from backend data
+  const totalBalance = walletBalance?.totalBalance?.naira || 0
+  const totalBalanceUSDT = walletBalance?.totalBalance?.usdt || 0
+  const totalROI = investmentStats?.totalEarnings || 0
+  const activePlans = investmentStats?.activeInvestments || 0
+  const totalInvested = investmentStats?.totalAmount || 0
+  const portfolioNaira = walletBalance?.totalBalance?.naira || 0
+  const portfolioUSDT = walletBalance?.totalBalance?.usdt || 0
+  const portfolioTotal = portfolioNaira + portfolioUSDT
+  const nairaPercent = portfolioTotal > 0 ? (portfolioNaira / portfolioTotal) * 100 : 0
+  const usdtPercent = portfolioTotal > 0 ? (portfolioUSDT / portfolioTotal) * 100 : 0
+
+  // Transactions
+  const allTransactions = transactionData?.transactions || []
+  type Transaction = typeof allTransactions[number]
+  const filteredTransactions = allTransactions.filter((transaction: Transaction) => {
+    const matchesSearch = transaction.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         transaction.amount.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (transaction.createdAt || '').toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesStatus = statusFilter === 'all' || transaction.status === statusFilter
+    const matchesType = typeFilter === 'all' || transaction.type === typeFilter
+    return matchesSearch && matchesStatus && matchesType
+  }).sort((a: Transaction, b: Transaction) => {
+    if (sortBy === 'date') {
+      return sortOrder === 'desc' 
+        ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    }
+    if (sortBy === 'amount') {
+      const amountA = a.amount
+      const amountB = b.amount
+      return sortOrder === 'desc' ? amountB - amountA : amountA - amountB
+    }
+    return 0
+  })
+  const totalPages = Math.ceil(filteredTransactions.length / transactionsPerPage)
+  const currentTransactions = filteredTransactions.slice(
+    (currentPage - 1) * transactionsPerPage,
+    currentPage * transactionsPerPage
+  )
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -132,33 +144,6 @@ export default function DashboardPage() {
     }
   }
 
-  const filteredTransactions = recentTransactions.filter(transaction => {
-    const matchesSearch = transaction.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         transaction.amount.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         transaction.date.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || transaction.status === statusFilter
-    const matchesType = typeFilter === 'all' || transaction.type === typeFilter
-    return matchesSearch && matchesStatus && matchesType
-  }).sort((a, b) => {
-    if (sortBy === 'date') {
-      return sortOrder === 'desc' 
-        ? new Date(b.date).getTime() - new Date(a.date).getTime()
-        : new Date(a.date).getTime() - new Date(b.date).getTime()
-    }
-    if (sortBy === 'amount') {
-      const amountA = parseFloat(a.amount.replace(/[^0-9.-]+/g, ''))
-      const amountB = parseFloat(b.amount.replace(/[^0-9.-]+/g, ''))
-      return sortOrder === 'desc' ? amountB - amountA : amountA - amountB
-    }
-    return 0
-  })
-
-  const totalPages = Math.ceil(filteredTransactions.length / transactionsPerPage)
-  const currentTransactions = filteredTransactions.slice(
-    (currentPage - 1) * transactionsPerPage,
-    currentPage * transactionsPerPage
-  )
-
   return (
     <div className="space-y-8 max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8">
       <motion.div
@@ -181,7 +166,7 @@ export default function DashboardPage() {
           >
             <Badge variant="outline" className="flex items-center gap-2 bg-white/50 backdrop-blur-sm px-4 py-2 rounded-full border-2">
               <WalletIcon className="h-5 w-5 text-[#ff5858]" />
-              <span className="font-medium">Total Balance: ₦1,250,000</span>
+              <span className="font-medium">Total Balance: {formatCurrency(totalBalance, 'naira')}</span>
             </Badge>
           </motion.div>
           <motion.div
@@ -191,7 +176,7 @@ export default function DashboardPage() {
           >
             <Badge variant="outline" className="flex items-center gap-2 bg-white/50 backdrop-blur-sm px-4 py-2 rounded-full border-2">
               <ChartBarIcon className="h-5 w-5 text-[#ff7e5f]" />
-              <span className="font-medium">Total ROI: ₦45,000</span>
+              <span className="font-medium">Total ROI: {formatCurrency(totalROI, 'usdt')}</span>
             </Badge>
           </motion.div>
         </div>
@@ -227,7 +212,7 @@ export default function DashboardPage() {
                 <CardContent className="p-4">
                   <div className="space-y-4">
                     <div className="rounded-lg bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-4">
-                      <p className="text-2xl font-bold">₦1,250,000</p>
+                      <p className="text-2xl font-bold">{formatCurrency(totalBalance, 'naira')}</p>
                       <p className="text-sm text-gray-500">Available for investment</p>
                     </div>
                   </div>
@@ -249,7 +234,7 @@ export default function DashboardPage() {
                 <CardContent className="p-4">
                   <div className="space-y-4">
                     <div className="rounded-lg bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-4">
-                      <p className="text-2xl font-bold">₦45,000</p>
+                      <p className="text-2xl font-bold">{formatCurrency(totalROI, 'usdt')}</p>
                       <p className="text-sm text-gray-500">Total earnings</p>
                     </div>
                   </div>
@@ -275,12 +260,12 @@ export default function DashboardPage() {
                 <CardContent className="p-4">
                   <div className="space-y-4">
                     <div className="rounded-lg bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-4">
-                      <p className="text-2xl font-bold">3</p>
+                      <p className="text-2xl font-bold">{activePlans}</p>
                       <p className="text-sm text-gray-500">Active investments</p>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Total Value</span>
-                      <span className="text-blue-600">₦750,000</span>
+                      <span className="text-blue-600">{formatCurrency(totalInvested, 'naira')}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -304,16 +289,16 @@ export default function DashboardPage() {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-500">Naira</span>
-                          <span className="font-medium">60%</span>
+                          <span className="font-medium">{nairaPercent.toFixed(2)}%</span>
                         </div>
-                        <Progress value={60} className="h-2" />
+                        <Progress value={nairaPercent} className="h-2" />
                       </div>
                       <div className="mt-4 space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-500">Crypto</span>
-                          <span className="font-medium">40%</span>
+                          <span className="font-medium">{usdtPercent.toFixed(2)}%</span>
                         </div>
-                        <Progress value={40} className="h-2" />
+                        <Progress value={usdtPercent} className="h-2" />
                       </div>
                     </div>
                   </div>
@@ -367,7 +352,7 @@ export default function DashboardPage() {
                 <CardContent className="p-6">
                   <div className="space-y-4">
                     <div className="rounded-lg bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-4">
-                      <p className="text-2xl font-bold">₦1,250,000</p>
+                      <p className="text-2xl font-bold">{formatCurrency(totalBalance, 'naira')}</p>
                       <p className="text-sm text-gray-500">Available for investment</p>
                     </div>
                   </div>
@@ -398,7 +383,7 @@ export default function DashboardPage() {
                 <CardContent className="p-6">
                   <div className="space-y-4">
                     <div className="rounded-lg bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-4">
-                      <p className="text-2xl font-bold">₦45,000</p>
+                      <p className="text-2xl font-bold">{formatCurrency(totalROI, 'usdt')}</p>
                       <p className="text-sm text-gray-500">Total earnings</p>
                     </div>
                   </div>
@@ -429,12 +414,12 @@ export default function DashboardPage() {
                 <CardContent className="p-6">
                   <div className="space-y-4">
                     <div className="rounded-lg bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-4">
-                      <p className="text-2xl font-bold">3</p>
+                      <p className="text-2xl font-bold">{activePlans}</p>
                       <p className="text-sm text-gray-500">Active investments</p>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Total Value</span>
-                      <span className="text-blue-600">₦750,000</span>
+                      <span className="text-blue-600">{formatCurrency(totalInvested, 'naira')}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -467,16 +452,16 @@ export default function DashboardPage() {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-500">Naira</span>
-                          <span className="font-medium">60%</span>
+                          <span className="font-medium">{nairaPercent.toFixed(2)}%</span>
                         </div>
-                        <Progress value={60} className="h-2" />
+                        <Progress value={nairaPercent} className="h-2" />
                       </div>
                       <div className="mt-4 space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-500">Crypto</span>
-                          <span className="font-medium">40%</span>
+                          <span className="font-medium">{usdtPercent.toFixed(2)}%</span>
                         </div>
-                        <Progress value={40} className="h-2" />
+                        <Progress value={usdtPercent} className="h-2" />
                       </div>
                     </div>
                   </div>
@@ -516,36 +501,50 @@ export default function DashboardPage() {
           <CardContent className="p-6">
             <ScrollArea className="h-[300px]">
               <div className="space-y-4">
-                {currentTransactions.map((transaction) => (
-                  <motion.div
-                    key={transaction.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="rounded-full bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-2">
-                        {getTransactionIcon(transaction.type)}
+                {currentTransactions.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <ClockIcon className="h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No Transactions Yet</h3>
+                    <p className="text-gray-500 mb-4">You haven't made any transactions yet. Start investing to see your activity here.</p>
+                    <Button 
+                      onClick={() => router.push('/dashboard/investments')}
+                      className="bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] hover:from-[#ff4848] hover:via-[#ff6e4f] hover:to-[#ff8956] text-white"
+                    >
+                      Start Investing
+                    </Button>
+                  </div>
+                ) : (
+                  currentTransactions.map((transaction: Transaction) => (
+                    <motion.div
+                      key={transaction.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className="rounded-full bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-2">
+                          {getTransactionIcon(transaction.type)}
+                        </div>
+                        <div>
+                          <p className="font-medium capitalize">{transaction.type}</p>
+                          <p className="text-sm text-gray-500">{transaction.createdAt}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium capitalize">{transaction.type}</p>
-                        <p className="text-sm text-gray-500">{transaction.date}</p>
+                      <div className="flex items-center space-x-4">
+                        <p className="font-medium">{transaction.amount}</p>
+                        <span
+                          className={cn(
+                            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+                            getStatusColor(transaction.status)
+                          )}
+                        >
+                          {transaction.status}
+                        </span>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <p className="font-medium">{transaction.amount}</p>
-                      <span
-                        className={cn(
-                          "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                          getStatusColor(transaction.status)
-                        )}
-                      >
-                        {transaction.status}
-                      </span>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  ))
+                )}
               </div>
             </ScrollArea>
             {totalPages > 1 && (
@@ -673,36 +672,57 @@ export default function DashboardPage() {
 
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-4">
-              {filteredTransactions.map((transaction) => (
-                <motion.div
-                  key={transaction.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="rounded-full bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-2">
-                      {getTransactionIcon(transaction.type)}
-                    </div>
-                    <div>
-                      <p className="font-medium capitalize">{transaction.type}</p>
-                      <p className="text-sm text-gray-500">{transaction.date}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <p className="font-medium">{transaction.amount}</p>
-                    <span
-                      className={cn(
-                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                        getStatusColor(transaction.status)
-                      )}
+              {filteredTransactions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <ClockIcon className="h-12 w-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Transactions Found</h3>
+                  <p className="text-gray-500 mb-4">
+                    {searchQuery || statusFilter !== 'all' || typeFilter !== 'all' 
+                      ? 'No transactions match your current filters. Try adjusting your search criteria.'
+                      : 'You haven\'t made any transactions yet. Start investing to see your activity here.'
+                    }
+                  </p>
+                  {!searchQuery && statusFilter === 'all' && typeFilter === 'all' && (
+                    <Button 
+                      onClick={() => router.push('/dashboard/investments')}
+                      className="bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] hover:from-[#ff4848] hover:via-[#ff6e4f] hover:to-[#ff8956] text-white"
                     >
-                      {transaction.status}
-                    </span>
-                  </div>
-                </motion.div>
-              ))}
+                      Start Investing
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                filteredTransactions.map((transaction: Transaction) => (
+                  <motion.div
+                    key={transaction.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className="rounded-full bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-2">
+                        {getTransactionIcon(transaction.type)}
+                      </div>
+                      <div>
+                        <p className="font-medium capitalize">{transaction.type}</p>
+                        <p className="text-sm text-gray-500">{transaction.createdAt}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <p className="font-medium">{transaction.amount}</p>
+                      <span
+                        className={cn(
+                          "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+                          getStatusColor(transaction.status)
+                        )}
+                      >
+                        {transaction.status}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))
+              )}
             </div>
           </ScrollArea>
 

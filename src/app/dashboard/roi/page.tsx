@@ -48,6 +48,9 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { useMyInvestments, useInvestmentStats } from '@/lib/hooks/useInvestments'
+import { useWithdrawBonus } from '@/lib/hooks/useBonus'
+import { toast } from 'react-hot-toast'
 
 interface RoiTransaction {
   id: number
@@ -58,60 +61,6 @@ interface RoiTransaction {
   type: 'daily' | 'weekly' | 'monthly'
 }
 
-const roiTransactions: RoiTransaction[] = [
-  {
-    id: 1,
-    plan: 'Premium Plan',
-    amount: '₦15,000',
-    date: '2024-03-20',
-    status: 'completed',
-    type: 'daily',
-  },
-  {
-    id: 2,
-    plan: 'Starter Plan',
-    amount: '₦5,000',
-    date: '2024-03-19',
-    status: 'completed',
-    type: 'daily',
-  },
-  {
-    id: 3,
-    plan: 'Premium Plan',
-    amount: '₦45,000',
-    date: '2024-03-18',
-    status: 'completed',
-    type: 'weekly',
-  },
-  {
-    id: 4,
-    plan: 'Starter Plan',
-    amount: '₦15,000',
-    date: '2024-03-17',
-    status: 'pending',
-    type: 'weekly',
-  },
-]
-
-// Fix unescaped entities
-const stats = [
-  {
-    name: 'Total ROI',
-    value: '$12,500.00',
-    change: '+15.5%',
-    changeType: 'increase',
-    description: 'Your total return on investment',
-  },
-  {
-    name: 'Daily ROI',
-    value: '$245.00',
-    change: '+2.5%',
-    changeType: 'increase',
-    description: 'Today&apos;s return on investment',
-  },
-  // ... rest of the stats ...
-]
-
 const BONUS_WAIT_DAYS = 15;
 const WELCOME_BONUS = 0.05; // 5%
 
@@ -121,31 +70,112 @@ function daysBetween(date1: Date, date2: Date) {
 }
 
 export default function RoiPage() {
-  const [isLoading, setIsLoading] = useState(true)
+  const { data: investments, isLoading: investmentsLoading } = useMyInvestments()
+  const { data: investmentStats, isLoading: statsLoading } = useInvestmentStats()
+  const withdrawBonusMutation = useWithdrawBonus()
   const [showAllTransactions, setShowAllTransactions] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [transactionsPerPage] = useState(10)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
-  const [lastBonusWithdrawal, setLastBonusWithdrawal] = useState<Date | null>(() => {
-    // Simulate: never withdrawn before
-    return null;
-  });
+  const [lastBonusWithdrawal, setLastBonusWithdrawal] = useState<Date | null>(null)
   const [activeInvestmentDate] = useState(() => {
-    // Simulate: user became active 16 days ago
+    // Use the earliest investment start date as active date
+    if (investments && investments.length > 0) {
+      return new Date(Math.min(...investments.map(inv => new Date(inv.startDate).getTime())))
+    }
     const d = new Date();
     d.setDate(d.getDate() - 16);
     return d;
   });
   const [bonusWithdrawn, setBonusWithdrawn] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1500)
-    return () => clearTimeout(timer)
-  }, [])
+  const isLoading = investmentsLoading || statsLoading
+
+  // Helper to format currency
+  const formatCurrency = (amount: number, currency: 'naira' | 'usdt') => {
+    if (currency === 'naira') return `₦${amount.toLocaleString()}`;
+    return `${amount} USDT`;
+  };
+
+  // ROI calculations
+  const totalRoi = investmentStats?.totalEarnings || 0
+  const dailyRoi = investments?.reduce((sum, inv) => sum + (inv.dailyEarnings || 0), 0) || 0
+  const totalInvested = investmentStats?.totalAmount || 0
+  const activeInvestments = investmentStats?.activeInvestments || 0
+
+  // Active plans breakdown
+  const planBreakdown = investments?.reduce((acc, inv) => {
+    const planName = inv.plan?.name || 'Plan';
+    acc[planName] = (acc[planName] || 0) + (inv.amount || 0);
+    return acc;
+  }, {} as Record<string, number>) || {};
+
+  // Calculate total bonus from active investments
+  const totalBonus = investments?.reduce((sum, inv) => {
+    if (inv.status === 'active') {
+      return sum + (inv.welcomeBonus || 0) + (inv.referralBonus || 0);
+    }
+    return sum;
+  }, 0) || 0;
+
+  // ROI transactions from payouts
+  const roiTransactions = investments?.flatMap(investment => 
+    investment.payoutHistory?.map(payout => ({
+      id: `${investment.id}-${payout.date}`,
+      plan: investment.plan?.name || 'Investment Plan',
+      amount: formatCurrency(payout.amount, investment.currency),
+      date: payout.date,
+      status: payout.status as 'completed' | 'pending',
+      type: payout.type as 'daily' | 'weekly' | 'monthly',
+      currency: investment.currency,
+    })) || []
+  ) || []
+
+  // Calculate pagination
+  const filteredTransactions = roiTransactions.filter(transaction => {
+    const matchesSearch = transaction.plan.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         transaction.amount.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesStatus = statusFilter === 'all' || transaction.status === statusFilter
+    const matchesType = typeFilter === 'all' || transaction.type === typeFilter
+    return matchesSearch && matchesStatus && matchesType
+  })
+  const totalPages = Math.ceil(filteredTransactions.length / transactionsPerPage)
+  const indexOfLastTransaction = currentPage * transactionsPerPage
+  const indexOfFirstTransaction = indexOfLastTransaction - transactionsPerPage
+  const currentTransactions = filteredTransactions.slice(indexOfFirstTransaction, indexOfLastTransaction)
+
+  // Calculate eligibility
+  const now = new Date();
+  let eligible = false;
+  let daysLeft = BONUS_WAIT_DAYS;
+  if (!lastBonusWithdrawal) {
+    daysLeft = BONUS_WAIT_DAYS - daysBetween(activeInvestmentDate, now);
+    eligible = daysLeft <= 0;
+  } else {
+    daysLeft = BONUS_WAIT_DAYS - daysBetween(new Date(lastBonusWithdrawal), now);
+    eligible = daysLeft <= 0;
+  }
+
+  const handleWithdrawBonus = async () => {
+    try {
+      const result = await withdrawBonusMutation.mutateAsync();
+      if (result.success) {
+        toast.success(result.message);
+        setLastBonusWithdrawal(new Date());
+        setBonusWithdrawn(true);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to withdraw bonus');
+    }
+  };
+
+  const handlePageChange = (pageNumber: number) => {
+    setCurrentPage(pageNumber)
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -171,40 +201,9 @@ export default function RoiPage() {
     }
   }
 
-  // Calculate pagination
-  const filteredTransactions = roiTransactions.filter(transaction => {
-    const matchesSearch = transaction.plan.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         transaction.amount.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || transaction.status === statusFilter
-    const matchesType = typeFilter === 'all' || transaction.type === typeFilter
-    return matchesSearch && matchesStatus && matchesType
-  })
-
-  const totalPages = Math.ceil(filteredTransactions.length / transactionsPerPage)
-  const indexOfLastTransaction = currentPage * transactionsPerPage
-  const indexOfFirstTransaction = indexOfLastTransaction - transactionsPerPage
-  const currentTransactions = filteredTransactions.slice(indexOfFirstTransaction, indexOfLastTransaction)
-
-  // Calculate eligibility
-  const now = new Date();
-  let eligible = false;
-  let daysLeft = BONUS_WAIT_DAYS;
-  if (!lastBonusWithdrawal) {
-    daysLeft = BONUS_WAIT_DAYS - daysBetween(activeInvestmentDate, now);
-    eligible = daysLeft <= 0;
-  } else {
-    daysLeft = BONUS_WAIT_DAYS - daysBetween(new Date(lastBonusWithdrawal), now);
-    eligible = daysLeft <= 0;
-  }
-
-  const handleWithdrawBonus = () => {
-    setLastBonusWithdrawal(new Date());
-    setBonusWithdrawn(true);
-  };
-
-  const handlePageChange = (pageNumber: number) => {
-    setCurrentPage(pageNumber)
-  }
+  // Compute growth percentage
+  const monthlyGrowth = totalInvested > 0 ? ((totalRoi - totalInvested) / totalInvested) * 100 : 0;
+  const dailyGrowth = totalInvested > 0 ? ((dailyRoi) / totalInvested) * 100 : 0;
 
   return (
     <div className="space-y-6 sm:space-y-8 max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -228,7 +227,7 @@ export default function RoiPage() {
           >
             <Badge variant="outline" className="flex items-center gap-2 bg-white/50 backdrop-blur-sm px-4 py-2 rounded-full border-2">
               <ChartBarIcon className="h-5 w-5 text-blue-600" />
-              <span className="font-medium">Total ROI: ₦80,000</span>
+              <span className="font-medium">Total ROI: {formatCurrency(totalRoi, 'naira')}</span>
             </Badge>
           </motion.div>
           <motion.div
@@ -238,7 +237,7 @@ export default function RoiPage() {
           >
             <Badge variant="outline" className="flex items-center gap-2 bg-white/50 backdrop-blur-sm px-4 py-2 rounded-full border-2">
               <ArrowTrendingUpIcon className="h-5 w-5 text-green-600" />
-              <span className="font-medium">Growth: +12.5%</span>
+              <span className="font-medium">Growth: +{monthlyGrowth.toFixed(2)}%</span>
             </Badge>
           </motion.div>
         </div>
@@ -287,13 +286,13 @@ export default function RoiPage() {
                   <div className="space-y-4">
                     <div className="rounded-lg bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-4 shadow-inner">
                       <p className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] bg-clip-text text-transparent">
-                        ₦80,000
+                        {formatCurrency(totalRoi, 'naira')}
                       </p>
                       <p className="text-sm text-gray-500 mt-1">Total earnings</p>
                     </div>
                     <div className="flex justify-between text-sm sm:text-base">
                       <span className="text-gray-500">Monthly Growth</span>
-                      <span className="text-green-600 font-medium">+12.5%</span>
+                      <span className="text-green-600 font-medium">+{monthlyGrowth.toFixed(2)}%</span>
                     </div>
                   </div>
                 </CardContent>
@@ -324,13 +323,13 @@ export default function RoiPage() {
                   <div className="space-y-4">
                     <div className="rounded-lg bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-4 shadow-inner">
                       <p className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] bg-clip-text text-transparent">
-                        ₦20,000
+                        {formatCurrency(dailyRoi, 'naira')}
                       </p>
                       <p className="text-sm text-gray-500 mt-1">Daily earnings</p>
                     </div>
                     <div className="flex justify-between text-sm sm:text-base">
                       <span className="text-gray-500">Daily Growth</span>
-                      <span className="text-green-600 font-medium">+1.5%</span>
+                      <span className="text-green-600 font-medium">+{dailyGrowth.toFixed(2)}%</span>
                     </div>
                   </div>
                 </CardContent>
@@ -462,18 +461,12 @@ export default function RoiPage() {
                   <div className="space-y-4">
                     <div className="rounded-lg bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-4 shadow-inner">
                       <div className="space-y-2">
-                        <div className="flex justify-between text-sm sm:text-base">
-                          <span className="text-gray-500">Premium Plan</span>
-                          <span className="font-medium">₦45,000</span>
-                        </div>
-                        <Progress value={75} className="h-2" />
-                      </div>
-                      <div className="mt-4 space-y-2">
-                        <div className="flex justify-between text-sm sm:text-base">
-                          <span className="text-gray-500">Starter Plan</span>
-                          <span className="font-medium">₦15,000</span>
-                        </div>
-                        <Progress value={25} className="h-2" />
+                        {Object.entries(planBreakdown).map(([plan, amount]) => (
+                          <div key={plan} className="flex justify-between text-sm sm:text-base">
+                            <span className="text-gray-500">{plan}</span>
+                            <span className="font-medium">{formatCurrency(amount, 'naira')}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -513,40 +506,54 @@ export default function RoiPage() {
           <CardContent className="p-4 sm:p-6">
             <ScrollArea className="h-[300px] sm:h-[400px] pr-4">
               <div className="space-y-4">
-                {roiTransactions.map((transaction) => (
-                  <motion.div
-                    key={transaction.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg border-2 p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="rounded-full bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-2 shadow-inner">
-                        {getTypeIcon(transaction.type)}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-base sm:text-lg">{transaction.plan}</p>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-sm text-gray-500">{transaction.date}</p>
-                          <span className="text-sm text-gray-500 hidden sm:inline">•</span>
-                          <p className="text-sm text-gray-500">{transaction.type}</p>
+                {roiTransactions.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <ChartBarIcon className="h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No ROI Transactions Yet</h3>
+                    <p className="text-gray-500 mb-4">You haven't earned any ROI yet. Start investing to see your returns here.</p>
+                    <Button 
+                      onClick={() => window.location.href = '/dashboard/investments'}
+                      className="bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] hover:from-[#ff4848] hover:via-[#ff6e4f] hover:to-[#ff8956] text-white"
+                    >
+                      Start Investing
+                    </Button>
+                  </div>
+                ) : (
+                  roiTransactions.map((transaction) => (
+                    <motion.div
+                      key={transaction.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg border-2 p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300"
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className="rounded-full bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-2 shadow-inner">
+                          {getTypeIcon(transaction.type)}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-base sm:text-lg">{transaction.plan}</p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm text-gray-500">{transaction.date}</p>
+                            <span className="text-sm text-gray-500 hidden sm:inline">•</span>
+                            <p className="text-sm text-gray-500">{transaction.type}</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center justify-between sm:justify-end gap-4">
-                      <p className="font-semibold text-base sm:text-lg">{transaction.amount}</p>
-                      <span
-                        className={cn(
-                          "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
-                          getStatusColor(transaction.status)
-                        )}
-                      >
-                        {transaction.status}
-                      </span>
-                    </div>
-                  </motion.div>
-                ))}
+                      <div className="flex items-center justify-between sm:justify-end gap-4">
+                        <p className="font-semibold text-base sm:text-lg">{transaction.amount}</p>
+                        <span
+                          className={cn(
+                            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
+                            getStatusColor(transaction.status)
+                          )}
+                        >
+                          {transaction.status}
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))
+                )}
               </div>
             </ScrollArea>
           </CardContent>
@@ -620,40 +627,61 @@ export default function RoiPage() {
             <div className="flex-1 overflow-hidden">
               <ScrollArea className="h-full">
                 <div className="p-6 space-y-4">
-                  {currentTransactions.map((transaction) => (
-                    <motion.div
-                      key={transaction.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, ease: "easeOut" }}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg border-2 p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300"
-                    >
-                      <div className="flex items-center space-x-4">
-                        <div className="rounded-full bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-2 shadow-inner">
-                          {getTypeIcon(transaction.type)}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-base sm:text-lg">{transaction.plan}</p>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-sm text-gray-500">{transaction.date}</p>
-                            <span className="text-sm text-gray-500 hidden sm:inline">•</span>
-                            <p className="text-sm text-gray-500">{transaction.type}</p>
+                  {currentTransactions.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <ChartBarIcon className="h-12 w-12 text-gray-400 mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No Transactions Found</h3>
+                      <p className="text-gray-500 mb-4">
+                        {searchQuery || statusFilter !== 'all' || typeFilter !== 'all' 
+                          ? 'No transactions match your current filters. Try adjusting your search criteria.'
+                          : 'You haven\'t earned any ROI yet. Start investing to see your returns here.'
+                        }
+                      </p>
+                      {!searchQuery && statusFilter === 'all' && typeFilter === 'all' && (
+                        <Button 
+                          onClick={() => window.location.href = '/dashboard/investments'}
+                          className="bg-gradient-to-r from-[#ff5858] via-[#ff7e5f] to-[#ff9966] hover:from-[#ff4848] hover:via-[#ff6e4f] hover:to-[#ff8956] text-white"
+                        >
+                          Start Investing
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    currentTransactions.map((transaction) => (
+                      <motion.div
+                        key={transaction.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg border-2 p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300"
+                      >
+                        <div className="flex items-center space-x-4">
+                          <div className="rounded-full bg-gradient-to-r from-[#ff5858]/10 via-[#ff7e5f]/10 to-[#ff9966]/10 p-2 shadow-inner">
+                            {getTypeIcon(transaction.type)}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-base sm:text-lg">{transaction.plan}</p>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="text-sm text-gray-500">{transaction.date}</p>
+                              <span className="text-sm text-gray-500 hidden sm:inline">•</span>
+                              <p className="text-sm text-gray-500">{transaction.type}</p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center justify-between sm:justify-end gap-4">
-                        <p className="font-semibold text-base sm:text-lg">{transaction.amount}</p>
-                        <span
-                          className={cn(
-                            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
-                            getStatusColor(transaction.status)
-                          )}
-                        >
-                          {transaction.status}
-                        </span>
-                      </div>
-                    </motion.div>
-                  ))}
+                        <div className="flex items-center justify-between sm:justify-end gap-4">
+                          <p className="font-semibold text-base sm:text-lg">{transaction.amount}</p>
+                          <span
+                            className={cn(
+                              "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
+                              getStatusColor(transaction.status)
+                            )}
+                          >
+                            {transaction.status}
+                          </span>
+                        </div>
+                      </motion.div>
+                    ))
+                  )}
                 </div>
               </ScrollArea>
             </div>

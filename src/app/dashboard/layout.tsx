@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   HomeIcon,
   WalletIcon,
@@ -37,6 +37,7 @@ import {
 import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useTheme } from "next-themes"
+import { useLogout } from '@/lib/hooks/useAuth'
 
 // Notification types
 type NotificationType = 'success' | 'warning' | 'info'
@@ -115,6 +116,8 @@ export default function DashboardLayout({
   const [notifications, setNotifications] = useState<Notification[]>(initialNotifications)
   const pathname = usePathname()
   const { setTheme, resolvedTheme } = useTheme()
+  const logout = useLogout();
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -150,6 +153,11 @@ export default function DashboardLayout({
       prevNotifications.map((notification: Notification) => ({ ...notification, read: true }))
     )
   }
+
+  const handleLogout = async () => {
+    await logout.mutateAsync();
+    router.push('/auth/login');
+  };
 
   return (
     <div className="min-h-screen bg-background dark:bg-[#18181b]">
@@ -490,7 +498,10 @@ export default function DashboardLayout({
                   </div>
                   <DropdownMenuSeparator />
                   <div className="p-2">
-                    <DropdownMenuItem className="flex items-center space-x-2 text-red-600 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/30">
+                    <DropdownMenuItem
+                      className="flex items-center space-x-2 text-red-600 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/30"
+                      onClick={handleLogout}
+                    >
                       <ArrowRightOnRectangleIcon className="h-4 w-4" />
                       <span>Sign out</span>
                     </DropdownMenuItem>
