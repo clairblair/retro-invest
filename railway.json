@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "services": {
+    "frontend": {
+      "source": ".",
+      "dockerfile": "Dockerfile.frontend",
+      "environment": {
+        "NODE_ENV": "production",
+        "NEXT_PUBLIC_API_URL": "${{backend.RAILWAY_PUBLIC_DOMAIN}}"
+      }
+    },
+    "backend": {
+      "source": ".",
+      "dockerfile": "Dockerfile.backend",
+      "environment": {
+        "NODE_ENV": "production",
+        "PORT": "3001"
+      }
+    }
+  }
+} 
