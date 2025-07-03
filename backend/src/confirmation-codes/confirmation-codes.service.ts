@@ -2,7 +2,6 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ConfirmationCode, ConfirmationCodeDocument } from './schemas/confirmation-code.schema';
-
 @Injectable()
 export class ConfirmationCodesService {
   constructor(

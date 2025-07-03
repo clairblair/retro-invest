@@ -61,7 +61,6 @@
     "helmet": "^7.2.0",
     "compression": "^1.7.4",
     "express-rate-limit": "^7.4.1",
-    "crypto": "^1.0.1",
     "uuid": "^9.0.1",
     "moment": "^2.30.1",
     "dotenv": "^16.4.7",
