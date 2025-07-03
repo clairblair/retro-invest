@@ -142,8 +142,8 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   },
-    "engines": {
-    "node": ">=21.7.3",
-    "npm": ">=11.4.2"
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
   }
 }
