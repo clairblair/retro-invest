@@ -1,60 +1,34 @@
-# Multi-stage Dockerfile for Railway deployment
-FROM node:18-alpine AS base
+# Simple Dockerfile for full-stack deployment
+FROM node:18-alpine
 
-# Install dependencies only when needed
-FROM base AS deps
+# Install pnpm
+RUN npm install -g pnpm
+
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy root package files and install frontend dependencies
+COPY package*.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+# Copy backend package files and install backend dependencies
 COPY backend/package*.json ./backend/
-
-# Install dependencies
-RUN npm ci --only=production
-
-# Build backend
-FROM base AS backend-builder
-WORKDIR /app
-COPY backend/ ./backend/
-COPY --from=deps /app/backend/node_modules ./backend/node_modules
 WORKDIR /app/backend
-RUN npm run build
+RUN pnpm install --frozen-lockfile
 
-# Build frontend
-FROM base AS frontend-builder
+# Return to root and copy all source code
 WORKDIR /app
-COPY package*.json ./
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build frontend
-RUN npm run build:frontend
+# Build both frontend and backend
+RUN pnpm run build:frontend
+WORKDIR /app/backend
+RUN pnpm run build
 
-# Production image for backend
-FROM base AS backend-runner
+# Back to root for startup
 WORKDIR /app
-ENV NODE_ENV=production
 
-# Copy built backend
-COPY --from=backend-builder /app/backend/dist ./dist
-COPY --from=backend-builder /app/backend/node_modules ./node_modules
-COPY --from=backend-builder /app/backend/package*.json ./
+# Expose both ports
+EXPOSE 3000 3001
 
-EXPOSE 3001
-
-CMD ["npm", "run", "start:prod"]
-
-# Production image for frontend
-FROM base AS frontend-runner
-WORKDIR /app
-ENV NODE_ENV=production
-
-# Copy built frontend
-COPY --from=frontend-builder /app/.next ./.next
-COPY --from=frontend-builder /app/node_modules ./node_modules
-COPY --from=frontend-builder /app/package*.json ./
-COPY --from=frontend-builder /app/public ./public
-
-EXPOSE 3000
-
-CMD ["npm", "start"] 
+# Start both services in production
+CMD ["pnpm", "run", "start:production"] 

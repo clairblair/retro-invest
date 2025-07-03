@@ -1,33 +1,24 @@
-FROM node:18-alpine AS base
+FROM node:18-alpine
 
-# Install dependencies only when needed
-FROM base AS deps
+# Install pnpm
+RUN npm install -g pnpm
+
 WORKDIR /app
 
-# Copy package files
+# Copy root pnpm-lock.yaml and backend package files
+COPY pnpm-lock.yaml ./
 COPY backend/package*.json ./
-RUN npm ci --only=production
 
-# Build the app
-FROM base AS builder
-WORKDIR /app
+# Install dependencies using root lockfile
+RUN pnpm install --frozen-lockfile
+
+# Copy the backend source code
 COPY backend/ ./
-COPY --from=deps /app/node_modules ./node_modules
 
-# Build NestJS app
-RUN npm run build
+# Build the application
+RUN pnpm run build
 
-# Production image
-FROM base AS runner
-WORKDIR /app
-
-ENV NODE_ENV=production
-
-# Copy built app
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
-
+# Expose port and start
 EXPOSE 3001
 
-CMD ["npm", "run", "start:prod"] 
+CMD ["pnpm", "run", "start:prod"] 

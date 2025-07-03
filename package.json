@@ -15,6 +15,7 @@
     "start": "next start",
     "start:backend": "nest start",
     "start:prod": "node dist/src/main",
+    "start:production": "concurrently \"pnpm start\" \"cd backend && pnpm run start:prod\" --names \"frontend,backend\" --prefix name --kill-others-on-fail",
     "lint": "next lint",
     "lint:backend": "eslint \"{backend/src,backend/apps,backend/libs,backend/test}/**/*.ts\" --fix",
     "test": "jest",

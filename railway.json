@@ -1,5 +1,8 @@
 {
   "version": 2,
+  "build": {
+    "packageManager": "pnpm"
+  },
   "services": {
     "frontend": {
       "source": ".",
