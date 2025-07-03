@@ -1,6 +1,190 @@
 # KLTMINES Investment Platform
 
-A modern, advanced, and beautiful investment platform built with **Next.js**, **Tailwind CSS**, and **shadcn/ui**. KLTMINES offers a seamless, responsive, and secure experience for investors, with features like smart investment plans, wallet management, ROI tracking, notifications, and more.
+A comprehensive investment platform built with modern technologies, organized as a monorepo with separate frontend and backend modules.
+
+## 🏗️ Project Structure
+
+```
+investment/
+├── frontend/          # Next.js Frontend Application
+│   ├── src/          # Frontend source code
+│   ├── public/       # Static assets
+│   ├── package.json  # Frontend dependencies
+│   └── ...
+├── backend/          # NestJS Backend API
+│   ├── src/          # Backend source code
+│   ├── test/         # Backend tests
+│   ├── package.json  # Backend dependencies
+│   └── ...
+├── pnpm-workspace.yaml    # PNPM workspace configuration
+├── package.json           # Root workspace configuration
+└── README.md             # This file
+```
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js (>=18.0.0)
+- PNPM (>=8.0.0)
+- MongoDB
+- Redis
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd investment
+```
+
+2. Install all dependencies:
+```bash
+pnpm install
+```
+
+3. Set up environment variables:
+```bash
+# Copy environment files and configure them
+cp backend/env.example backend/.env
+# Configure your environment variables in backend/.env
+```
+
+4. Start development servers:
+```bash
+pnpm dev
+```
+
+This will start both the frontend (Next.js) and backend (NestJS) servers concurrently.
+
+## 📜 Available Scripts
+
+### Root Level Scripts
+
+- `pnpm dev` - Start both frontend and backend in development mode
+- `pnpm build` - Build both frontend and backend for production
+- `pnpm start` - Start frontend in production mode
+- `pnpm lint` - Lint both frontend and backend
+- `pnpm test` - Run backend tests
+- `pnpm clean` - Clean build artifacts and node_modules
+
+### Frontend Scripts
+
+- `pnpm dev:frontend` - Start frontend development server
+- `pnpm build:frontend` - Build frontend for production
+- `pnpm lint:frontend` - Lint frontend code
+
+### Backend Scripts
+
+- `pnpm dev:backend` - Start backend development server
+- `pnpm build:backend` - Build backend for production
+- `pnpm start:backend` - Start backend in production mode
+- `pnpm lint:backend` - Lint backend code
+- `pnpm test:e2e` - Run backend end-to-end tests
+
+### Database Scripts
+
+- `pnpm seed` - Run database seeding
+- `pnpm seed:admin` - Seed admin user
+- `pnpm seed:plans` - Seed investment plans
+- `pnpm seed:all` - Seed all data
+- `pnpm seed:reset` - Reset and reseed database
+
+## 🛠️ Technology Stack
+
+### Frontend
+- **Next.js 15** - React framework with App Router
+- **TypeScript** - Type safety
+- **Tailwind CSS** - Utility-first CSS framework
+- **Radix UI** - Accessible UI components
+- **React Query/TanStack Query** - Server state management
+- **React Hook Form** - Form handling
+- **Framer Motion** - Animations
+
+### Backend
+- **NestJS** - Node.js framework
+- **TypeScript** - Type safety
+- **MongoDB** - Database with Mongoose ODM
+- **Prisma** - Database toolkit (for specific use cases)
+- **Redis** - Caching and session storage
+- **Bull** - Queue management
+- **Socket.io** - Real-time communication
+- **JWT** - Authentication
+- **Swagger** - API documentation
+
+### DevOps & Tools
+- **PNPM** - Package manager with workspace support
+- **ESLint & Prettier** - Code linting and formatting
+- **Jest** - Testing framework
+- **Concurrently** - Run multiple scripts simultaneously
+
+## 🚀 Deployment
+
+### Separate Deployment (Recommended)
+
+Each module can be deployed independently:
+
+#### Frontend Deployment
+```bash
+cd frontend
+pnpm build
+pnpm start
+```
+
+#### Backend Deployment
+```bash
+cd backend
+pnpm build
+pnpm start:prod
+```
+
+### Environment Variables
+
+Ensure all required environment variables are set in your deployment environment. Refer to `backend/env.example` for required variables.
+
+## 📱 Features
+
+- **User Authentication & Authorization**
+- **Investment Plan Management**
+- **Real-time Portfolio Tracking**
+- **Payment Integration** (Stripe, Paystack, Flutterwave)
+- **Admin Dashboard**
+- **Email Notifications**
+- **Two-Factor Authentication**
+- **Responsive Design**
+- **Real-time Updates**
+
+## 🧪 Testing
+
+Run tests for the backend:
+```bash
+pnpm test
+pnpm test:e2e
+```
+
+## 📝 Development Guidelines
+
+1. **Frontend Code**: Place in `frontend/src/`
+2. **Backend Code**: Place in `backend/src/`
+3. **Shared Types**: Consider creating a shared package if needed
+4. **Environment Variables**: Keep in respective module directories
+5. **Documentation**: Update README when adding new features
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🆘 Support
+
+For support, email support@kltmines.com or create an issue in the repository.
 
 ---
 
